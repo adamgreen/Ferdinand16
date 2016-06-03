@@ -1,0 +1,10 @@
+.DS_Store
+*.bin
+*.disasm
+*.elf
+*.hex
+*.map
+*.o
+*.d
+*.a
+mri.log
