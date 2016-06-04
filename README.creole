@@ -1,0 +1,160 @@
+{{http://www.robothon.org/robothon/images/srslogo.gif}}
+Tracking of the work I am doing on a robot to compete in the next
+[[http://www.robothon.org/robothon/robo-magellan.php | Seattle Robotics Society's Robo-Magellan]] event at the
+[[http://www.robothon.org/robothon/index.php | Seattle Center on October 1, 2016]].
+
+
+===Points of Interest
+[[https://github.com/adamgreen/Ferdinand14#readme | Notes from our 2014 attempt]]\\
+[[https://github.com/adamgreen/Ferdinand16#clone-this-repo-and-its-submodules | How to Clone GitHub Repository]]\\
+
+
+==June 3, 2016
+It has been 2 years since I helped [[https://github.com/Xandon | Xandon]] out with his
+[[http://www.robothon.org/robothon/robo-magellan.php | Robo-Magellan]] robot competitor. I took a well needed break away
+from the Robo-Magellan competition last year. I had planned to do the same this year but ideas for a new Robo-Magellan
+robot kept resurfacing in my mind. I am creating this **Ferdinand16** project to track these ideas and my attempt to
+bring them to life in time for the [[http://www.robothon.org/robothon/index.php | 2016 SRS Robothon]].
+
+===The Ideas
+I learned a lot from working with Xandon back in 2014 on his Robo-Magellan robot. Many of the ideas for my own
+Robo-Magellan robot come from that great experience.
+
+Let's start with my ideas for the hardware.  Where possible, I plan to select hardware that will make the software
+simpler:
+* **Larger & Heavier:** Many of the other competitors used RC trucks as their base. These smaller bots make for easy
+  transportation to testing and competition sites. The larger, heavier robots like the one Xandon used provide a more
+  stable (less vibration) platform for various sensors like cameras and IMUs. The increased height also tends to offer a
+  better vantage point for the sensors as well.
+* **Differential Wheeled:** The differential wheeled robot is just so much easier to control from software. Their
+  turning radius is so tight that they can turn in-place. The ackerman steering used with RC trucks tend to have larger
+  turning radii and often require reverse motion to get out of tight situations. Even course correction while
+  translating from one traffic cone to the next tends to be easier with the differential robots since they can change
+  heading easily no matter how slow they are currently traveling.
+* **Wheel Encoders:** Having encoders on the wheels will provide the software with more information about the distance
+  it has translated since the last waypoint or cone.
+* **Accurate Heading Sensor:** I plan to re-use the orientation sensor from our
+  [[https://github.com/adamgreen/Ferdinand14 | 2014 attempt]]. We had the 9 DoF inertial measurement unit in that
+  project working very well for the 2014 competition and I want to leverage it for this year's as well.
+* **No GPS:** From what I have seen in robots created by others for previous Robo-Magellan competitions, writing
+  software which can filter the GPS data to navigate the Seattle Center course reliably can prove to be quite difficult.
+  I want to skip that difficulty if possible.
+* **Microcontrollers, Not Microprocessors:** I want to constrain myself to running all of the software for this robot on
+  microcontrollers rather than resorting to higher end microprocessor based systems. This forces me to use the KISS
+  (Keep It Simple Stupid) principles when designing and implementing my software. Having something like a laptop on my
+  robot would allow me to potentially go overboard and try to do too much like using sophisticated computer vision and
+  localization algorithms. This could lead to some very tricky issues that I couldn't solve by October 1st.
+* **Off-the-Shelf Vision System:** Related to the previous item, I want to use an existing proven computer vision system
+  if possible so that I can instead concentrate on writing the rest of the navigation software.
+
+Giving myself the above hardware constraints, I can start to consider the high level goals of the software:
+* **Filtered Compass Heading:** I plan to take the
+  [[https://github.com/adamgreen/Ferdinand14/tree/master/orientation | IMU code]] that I wrote for the 2014 competition
+  and simplify it. That code uses a Kalman filter to determine the robot's complete 3D orientation when only the compass
+  heading is required. I have some ideas on how to simplify that code to only return the compass heading and run on an
+  ARM Cortex-M processor rather than a PC as was done before.
+* **Dead reckoning navigation:** I plan to take the information from the IMU mentioned above and combine it with the
+  wheel odometry to use dead reckoning as the method to navigate between waypoints and traffic cones. The math for this
+  is quite simple. The complexity will be the noise and errors that the real world throws into the works.
+* **Cone Finding:** I plan to use a
+  [[http://charmedlabs.com/default/pixy-cmucam5/ | Pixy (CMUcam5) camera from Charmed Labs]] to keep the robot on target
+  by tracking the traffic cone once the dead reckoning gets the robot close enough.
+
+===Initial Build of Materials
+Based on the ideas I have so far for this robot, I have decided to use the following hardware for my build:
+* [[https://github.com/adamgreen/Ferdinand14/tree/master/orientation | Ferdinand14 IMU]]: I plan to re-use the IMU
+  hardware from the 2014 attempt. I will simplify the code and port it to run on ARM Cortex-M embedded hardware instead
+  of the PC. //In the image below, the black box on the right contains the IMU hardware and the MacBook Air on the left
+  is running the Kalman filter to calculate and display the IMU's current orientation.//\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-05.jpg}}
+* [[https://www.parallax.com/product/arlo-robotic-platform-system | Parallax Arlo Platform]]: Rather than take the time
+  to build a robot platform that meets my needs, I have decided to go with the Arlo Robotic Platform System from
+  Parallax. The complete kit even comes with the motors, wheel encoders, motor drivers, and batteries that I need to
+  jump start this project.\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-01.png}}
+* [[http://charmedlabs.com/default/pixy-cmucam5/ | Pixy camera from Charmed Labs]]: This camera includes its own dual
+  core ARM Cortex-M4F & Cortex-M0 microprocessor to track colour blobs like bright orange traffic cones. In 2014
+  [[https://github.com/adamgreen/Ferdinand14#vision-based-traffic-cone-detector | I implemented a similar blob detector]]
+  to run on the PC using the RGB video output from the Kinect camera. This time I will leverage this off the shelf
+  solution from Charmed Labs.\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-04.jpg}}
+* [[https://developer.mbed.org/platforms/mbed-LPC1768/ | mbed NXP LPC1768 96MHz Cortex-M3 Board]]: This is the
+  microcontroller with which I am most familiar so I plan to leverage that experience for this project. It has 512K of
+  FLASH and 64K of RAM.\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-06.jpg}}
+* [[https://www.adafruit.com/product/2821 | Adafruit Feather HUZZAH with ESP8266 WiFi]]: The ESP8266 is a really cool
+  little microcontroller on its own. It supports WiFi communications in a <$10 chip. I plan to use this as a UART to
+  WiFi bridge like I did in my
+  [[https://github.com/adamgreen/bb-8#wireless-debuggingprogramming-using-esp8266 | BB-8 replica project]]. This will
+  allow me to remotely debug the LPC1768 using GDB and also remotely program it with my
+  [[https://github.com/adamgreen/bb-8/tree/master/mriprog | mriprog utility]].\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-02.jpg}}
+
+Earlier this week I placed orders for the above items which I didn't already have in my possession.
+
+===Pixy Camera
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-04.jpg}}\\
+I dropped the other work on the project I was doing when the Pixy camera arrived on Wednesday and started to experiment
+with it instead. I installed the latest [[http://cmucam.org/projects/cmucam5/wiki/Installing_PixyMon_on_Mac_2 | PixyMon]]
+on my MacBook Air, dusted off my orange traffic cone last used in 2014, and headed outside on an overcast afternoon to
+experiment with the Pixy. I have a few first impressions that I will document here now but I know that I still have much
+to learn about this powerful tool:
+* It was easy to train the Pixy to learn the colour signature for the traffic cone. The camera would then do a good job
+  of tracking the cone **until**:
+** I restarted the camera. I suspect that different restarts of the camera would tune for white balance differently and
+   that would impact the quality of the previously recorded signature. I can see 2 solutions for this:
+### Tilt the camera down to look at a white test patch affixed to the robot during power-up so that it tunes to the same
+    white pattern each time.
+### Find good white balance settings for outdoors and fix the camera to use those settings if possible. This might
+    require modification to the Pixy firmware.
+** I observed the cone from a different angle. Usually I would see the quality of the tracking degrade right after it
+   was obvious that the camera had adjusted its exposure time due to a change in lighting conditions.
+
+I also ordered a [[http://charmedlabs.com/default/pan-tilt-kit/ | Pan-Tilt Kit from Charmed Labs]]. I don't know if I
+will end up using this on my final robot or not. I thought it might prove useful so I ordered it along with the camera
+just incase. The documentation for the Pixy did mention that the servos might not work correctly if powering the Pixy
+from too long of a USB cable. In my case, the device would just reset whenever I attempted to put the camera into
+pan-tilt tracking mode. I switched to a short cable (~1 foot) and it worked flawlessly.
+
+===Ferdinand14 IMU
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-05.jpg}}\\
+
+I pulled the IMU hardware and software from the 2014 attempt out of storage and started to experiment with it to
+familiarize myself with it again. I quickly got it back up and running
+[[https://github.com/adamgreen/Ferdinand14/tree/master/orientation | the orientation sample]] from my
+[[https://github.com/adamgreen/Ferdinand14#readme | Ferdinand14 project]]. It was cool to see the unfiltered pose
+estimation, calculated directly from raw accelerometer and magnetometer sensor readings, rendered on the screen with all
+of its susceptibility to vibrations & errors and then switch to Kalman filtered mode to see the nice smooth sensor pose
+being rendered instead. This sample also has the ability to switch into a mode which just uses gyro rate integration to
+track the orientation. When I switched into this mode I found that the yaw and pitch axis would not show perceptible
+drift but the roll axis would generate so much drift that it would visibly rotate around this axis in the rendered
+video. I reran the [[https://github.com/adamgreen/Ferdinand14#sensor-calibration | IMU calibration process]] and did
+find that one gyro now required different compensation constants for reducing temperature induced zero bias. The first
+graph below is from this week's calibration run while the second one is from back in 2014. The equations in the upper
+left hand portion of the graph give the equation of the linear trend lines that have been drawn through the gathered
+points. The slopes of all of these trend lines are still pretty much the same as back in 2014 and so are most of the
+y-intercepts except for the first one which had changed from 52.447 to 48.138.\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-03.png}}\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160603-07.png}}\\
+
+I updated the calibration settings in the config file for this y-intercept and then the orientation sample had no
+problems maintaining a steady orientation pose from gyro rate integration. I could leave the device sitting on the table
+for >5 minutes and still not notice any perceptible change in the rendered object's pose.
+
+===Clone this Repo and its Submodules
+Cloning now requires a few more options to fetch all of the necessary code (including GCC4MBED).
+
+{{{
+git clone --recursive git@github.com:adamgreen/Ferdinand16.git
+}}}
+
+* In the gcc4mbed subdirectory you will find multiple install scripts.  Run the install script appropriate for your
+platform:
+** Windows: win_install.cmd
+** OS X: mac_install
+** Linux: linux_install
+* You can then run the BuildShell script which will be created during the install to properly configure the PATH
+environment variable.  You may want to edit this script to further customize your development environment.
+
+If you encounter any issues with the install then refer to the **Important Notes** section of the README in the gcc4mbed
+subdirectory.
