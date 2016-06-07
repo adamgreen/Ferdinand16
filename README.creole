@@ -9,6 +9,31 @@ Tracking of the work I am doing on a robot to compete in the next
 [[https://github.com/adamgreen/Ferdinand16#clone-this-repo-and-its-submodules | How to Clone GitHub Repository]]\\
 
 
+
+==June 6, 2016
+===IMU Updates
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160606-01.jpg}}\\
+I am re-reading
+[[http://www.amazon.com/Kalman-Filter-Beginners-MATLAB-Examples/dp/1463648359 | Phil Kim's "Kalman Filter for for Beginners with MATLAB Examples]]
+to refresh my memory on both Kalman and Complementary filters for fusing accelerometer/magnetometer and gyro sensor
+measurements. Once I finish with that research I plan to simplify the sensor fusion algorithm that I used on
+[[https://github.com/adamgreen/Ferdinand14#readme | Ferdinand14]] and port it to run on the LPC1768 microcontroller
+directly instead of on the PC as it does currently.
+
+===Adding WiFi
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160606-02.jpg}}\\
+My [[https://www.adafruit.com/product/2821 | ESP8266 board from Adafruit]] arrived today in the mail. I plan to get the
+[[https://github.com/jeelabs/esp-link | JEELABS' esp-Link firmware]] installed and tested on this board later in the
+week. I used that same firmware for
+[[https://github.com/adamgreen/bb-8#wireless-debuggingprogramming-using-esp8266 | remote debugging and programming]]
+my BB-8 ball bot and it was really useful. I want to replicate that experience for this project as well.
+
+So those are my work items for this week:
+* Simplify and port IMU code.
+* Setup ESP8266 for remote debugging/programming of LPC1768.
+
+
+
 ==June 3, 2016
 It has been 2 years since I helped [[https://github.com/Xandon | Xandon]] out with his
 [[http://www.robothon.org/robothon/robo-magellan.php | Robo-Magellan]] robot competitor. I took a well needed break away
