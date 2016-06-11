@@ -10,11 +10,50 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
-==June 6, 2016
+==June 10th, 2016
+===Lots of Fun Reading
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160606-01.jpg}}\\
+I finished re-reading
+[[http://www.amazon.com/Kalman-Filter-Beginners-MATLAB-Examples/dp/1463648359 | Phil Kim's "Kalman Filter for Beginners with MATLAB Examples]]
+this week. I now have a basic understanding of Kalman filters again and I spent a bit more energy this time reading the
+chapter on complementary filters as well since I just skimmed it last time. I think I now know enough about
+complementary filters to be able to implement one in C/C++. The only thing is that it would be for a Euler angle
+representation.  I prefer the no singularity aspect of my current quaternion based Kalman filter implementation.
+
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160607-01.jpg}}\\
+As I was reading Phil Kim's Kalman Filter book, I thought I should continue the fun of understanding how to represent
+the orientation of objects in 3D space by reading his other book,
+[[http://www.amazon.com/Rigid-Body-Dynamics-Beginners-Quaternions/dp/1493598201 | Rigid Body Dynamics For Beginners: Euler angles & Quaternions]].
+Euler Angles and Quaternions!  What Fun! It arrived on Tuesday, June 7th, and I started reading it the next evening
+after I had completed my Kalman filter reading. Like his Kalman filter book, there is a lot of great information in this
+book without getting bogged down too much in heavy mathematics (except for maybe the last 2 chapters). Unlike his Kalman
+filter book, the translation to English is actually very good in this book. It doesn't have the awkward sentence
+structure found in the other. I highly recommend it for understanding how to describe the motion of rigid bodies, like
+Robo-Magellan competitors, in 3D space.
+
+===New Toys from Sparkfun
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160609-01.jpg}}\\
+Even before I started on this Ferdinand16 project, I had already made a Sparkfun order which included some more
+[[https://developer.mbed.org/platforms/mbed-LPC1768/ | mbed LPC1768 boards]] since my stockpile was running low. I also
+added a breadboard to the order due to the fact that all of my existing ones were being used by other in progress
+projects. The main reason for the timing of the order was that I had
+[[https://github.com/mbedmicro/mbed/pull/1776 | issued a pull request to the mbed SDK]] for a bug I had encountered in
+the I2C driver for NXP LPC* parts and originally it was indicated that I had broken existing tests which used the
+Microchip 256kbit 24LC256 I2C EEPROM. I placed an order for one from Sparkfun to use for reproducing the bug and then I
+added those other goodies to the order to justify the shipping costs. It turned out that the issue with my PR was just
+with the way my PR was merged and not a bug in my actual fix. But now that the order has arrived, I will put one of the
+mbed LPC1768 boards and the breadboard to good use. I will use them to get my
+[[https://www.adafruit.com/product/2821 | ESP8266 board]] setup and running
+[[https://github.com/jeelabs/esp-link | JEELABS' esp-Link firmware]] to allow remote programming and debugging of the
+LPC1768.
+
+
+
+==June 6th, 2016
 ===IMU Updates
 {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160606-01.jpg}}\\
 I am re-reading
-[[http://www.amazon.com/Kalman-Filter-Beginners-MATLAB-Examples/dp/1463648359 | Phil Kim's "Kalman Filter for for Beginners with MATLAB Examples]]
+[[http://www.amazon.com/Kalman-Filter-Beginners-MATLAB-Examples/dp/1463648359 | Phil Kim's "Kalman Filter for Beginners with MATLAB Examples]]
 to refresh my memory on both Kalman and Complementary filters for fusing accelerometer/magnetometer and gyro sensor
 measurements. Once I finish with that research I plan to simplify the sensor fusion algorithm that I used on
 [[https://github.com/adamgreen/Ferdinand14#readme | Ferdinand14]] and port it to run on the LPC1768 microcontroller
@@ -34,7 +73,7 @@ So those are my work items for this week:
 
 
 
-==June 3, 2016
+==June 3rd, 2016
 It has been 2 years since I helped [[https://github.com/Xandon | Xandon]] out with his
 [[http://www.robothon.org/robothon/robo-magellan.php | Robo-Magellan]] robot competitor. I took a well needed break away
 from the Robo-Magellan competition last year. I had planned to do the same this year but ideas for a new Robo-Magellan
