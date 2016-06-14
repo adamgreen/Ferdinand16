@@ -10,6 +10,53 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==June 13th, 2016
+===ESP8266 Configured for Remote Debugging/Programming
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160612-02.jpg}}\\
+I now have the [[https://github.com/jeelabs/esp-link | JEELABS' esp-Link firmware]] running on my
+[[https://www.adafruit.com/product/2821 | ESP8266 board]] so that I can use it for remote debugging of a
+[[https://developer.mbed.org/platforms/mbed-LPC1768/ | mbed-LPC1768]] over WiFi. I can also use my
+[[https://github.com/adamgreen/bb-8/tree/master/mriprog | mriprog utility]] to remotely program the mbed device as well.
+The photo above shows it all setup with GDB running on my MacBook Air connected to the mbed device via WiFi. The USB
+connection was just being used for power.
+
+====Removal of Charging Circuit
+One nice thing about the Adafruit Feather HUZZAH with ESP8266 WiFi board is that it has a USB to serial device already
+on the board so that I didn't have to worry about getting that serial connection all setup so that I could program the
+esp-Link firmware into the ESP8266. This USB to serial device is configured so that esptool can use the RTS and DTR
+signals to automatically reset the ESP8266 into boot loader mode. This meant I didn't even need to figure out which pins
+to pull low at which time.
+
+One thing I didn't like about this particular board for this project was the built-in LiPo battery charging support. I
+have no use for this functionality in this particular project and it might even cause problems since I will be
+connecting the robot's main power supply to the VBAT pin and I never want this LiPo charging circuit to attempt to
+charge those batteries. I decided to disable this charging functionality on the board to be on the safe side.
+
+I first cut the trace between the two pads marked SJ1 on the
+[[https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/docs/AdafruitFeatherHuzzahESP8266Schematic.png | schematic]].
+These pads are circled yellow in the image below:\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160612-01.jpg}}\\
+After I cut that trace, the charging LED would randomly blink when powered from VBAT. It appears that the MCP7381/2
+charging chip didn't like the VBAT pin to be floating when its VDD pin was powered from the battery and not USB. My
+solution to that problem was to also remove the MCP7381/2 chip, circled red in the image.
+
+
+
+===Status as of June 13th
+My work items for last week were:
+* Simplify and port IMU code.
+** I read Phil Kim's [[http://www.amazon.com/Kalman-Filter-Beginners-MATLAB-Examples/dp/1463648359 | "Kalman Filter for Beginners with MATLAB Examples]] and [[http://www.amazon.com/Rigid-Body-Dynamics-Beginners-Quaternions/dp/1493598201 | "Rigid Body Dynamics For Beginners: Euler angles & Quaternions"]] books to research the idea of using a simpler version of a Kalman or complementary filter based on Euler angles instead of the current quaternion solution but the more I read, the more I like the idea of sticking with the current solution. 
+** At this point I don't even know how expensive the current quaternion version of the Kalman filter is to run on the LPC1768 so I would like to start porting the existing Processing code to begin performance measurements.
+* Setup ESP8266 for remote debugging/programming of LPC1768.
+** This work item was completed!
+
+My work items for the week ahead are:
+* Start porting the existing quaternion based Kalman filter Processing code running on my MacBook Air to C/C++ code running on the LPC1768 microcontroller.
+** Determine just how expensive this calculation is to run on the microcontroller and the optimizations upon which I should really concentrate my efforts.
+* Attend the rerunning of the SRS Robo-Magellan 2015 competition on June 19th at the Seattle Center. The original 2015 competition was postponed last fall during Robothon due to bad weather. I will just be a spectator at this event.
+
+
+
 ==June 10th, 2016
 ===Lots of Fun Reading
 {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160606-01.jpg}}\\
