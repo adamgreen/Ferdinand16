@@ -87,15 +87,23 @@ void draw()
   // Convert rotation quaternion into a 4x4 rotation matrix to be used for rendering.
   PMatrix3D rotationMatrix = quaternionToMatrix(g_rotationQuaternion);
   
-  // Calculate the yaw angle (rotation about y axis) from the rotation matrix.
-  PVector north = new PVector(rotationMatrix.m00, rotationMatrix.m01, rotationMatrix.m02);
-  float headingAngle = atan2(-north.z, north.x);
+  // Calculating yaw/pitch/roll directly from quaternion.
+  float w = g_rotationQuaternion[0];
+  float x = g_rotationQuaternion[1];
+  float y = g_rotationQuaternion[2];
+  float z = g_rotationQuaternion[3];
 
+  float yaw = atan2(2*(x*z+y*w), 1-2*(x*x+y*y));
+  float pitch = asin(-2*(y*z-x*w));
+  float roll = atan2(2*(x*y+z*w), 1-2*(x*x+z*z));
+
+  float headingAngle = yaw;
+  
   // If the user has pressed the space key, then move the camera to face the device front.
   if (g_zeroRotation)
   {
     PVector cam = new PVector(0, (height / 2.0) / tan(radians(30.0)));
-    g_cameraAngle = headingAngle;
+    g_cameraAngle = -headingAngle;
     cam.rotate(g_cameraAngle);
     camera(cam.x + width/2.0, height/2.0, cam.y, width/2.0, height/2.0, 0, 0, 1, 0);
     g_zeroRotation = false;
