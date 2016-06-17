@@ -8,3 +8,4 @@
 *.d
 *.a
 mri.log
+firmware/files.h

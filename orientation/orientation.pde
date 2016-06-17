@@ -17,7 +17,11 @@ import processing.serial.*;
 final int GYRO = 0;
 final int ACCEL_MAG = 1;
 final int KALMAN = 2;
+final int EMBEDDED = 3;
 
+final float g_floatThreshold = 0.000001f;
+
+Serial                   g_serial;
 HeadingSensorCalibration g_calibration;
 HeadingSensor            g_headingSensor;
 boolean                  g_zeroRotation = false;
@@ -33,6 +37,10 @@ PMatrix3D                g_kalmanP = new PMatrix3D(g_initVariance,           0.0
                                                              0.0f, g_initVariance,           0.0f,           0.0f,
                                                              0.0f,           0.0f, g_initVariance,           0.0f, 
                                                              0.0f,           0.0f,           0.0f, g_initVariance);
+PMatrix3D                g_embeddedP = new PMatrix3D(g_initVariance,           0.0f,           0.0f,           0.0f,
+                                                               0.0f, g_initVariance,           0.0f,           0.0f,
+                                                               0.0f,           0.0f, g_initVariance,           0.0f, 
+                                                               0.0f,           0.0f,           0.0f, g_initVariance);
 final float             g_gyroThreshold = 4.0f * (1.0f / 14.375f);
 
 // Used for calculating statistics (variance in particular) of sensors effects on
@@ -70,6 +78,8 @@ void setup()
   Heading filterWidths = new Heading(16, 16, 16, 16, 16, 16, 0, 0, 0, 0);
   g_headingSensor = new HeadingSensor(port, g_calibration, filterWidths);
   g_lastSampleCount = millis();
+  
+  g_serial = port;
 }
 
 void draw()
@@ -255,6 +265,8 @@ String getRotationSourceString()
     return "Accel/Mag";
   case KALMAN:
     return "Kalman";
+  case EMBEDDED:
+    return "Embedded";
   }
   
   return "";
@@ -280,6 +292,19 @@ void serialEvent(Serial port)
   // Calculate rotation using Kalman filter.
   float[] kalmanQuaternion = calculateKalmanRotation(heading, g_rotationQuaternion);
 
+  // Calculate rotation using embedded device's Kalman filter.
+  float[] embeddedQuaternion = calculateEmbeddedKalmanRotation(heading, g_rotationQuaternion);
+  
+  // Compare new Kalman filter code results to that of the older version.
+  for (int i = 0 ; i < 4 ; i++)
+  {
+    float diff = abs(kalmanQuaternion[i] - embeddedQuaternion[i]);
+    if (diff > g_floatThreshold)
+    {
+      println("quaternion[" + i + "] diff = " + diff);
+    }
+  }
+
   // Select which rotation quaternion to actually use for rendering.
   switch (g_rotationSource)
   {
@@ -290,6 +315,9 @@ void serialEvent(Serial port)
     g_rotationQuaternion = accelMagQuaternion;
     break;
   case KALMAN:
+    g_rotationQuaternion = kalmanQuaternion;
+    break;
+  case EMBEDDED:
     g_rotationQuaternion = kalmanQuaternion;
     break;
   }
@@ -492,6 +520,83 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
   return x;
 }
 
+float[] calculateEmbeddedKalmanRotation(FloatHeading heading, float[] currentQuaternion)
+{
+  // System model covariance matrices which don't change.
+  final float gyroVariance = 6.5E-11;
+  final float accelMagVariance = 1.0E-5;
+  final PMatrix3D Q = new PMatrix3D(gyroVariance,         0.0f,         0.0f,         0.0f,
+                                            0.0f, gyroVariance,         0.0f,         0.0f,
+                                            0.0f,         0.0f, gyroVariance,         0.0f,
+                                            0.0f,         0.0f,         0.0f, gyroVariance);
+  final PMatrix3D R = new PMatrix3D(accelMagVariance,             0.0f,             0.0f,             0.0f,
+                                                0.0f, accelMagVariance,             0.0f,             0.0f,
+                                                0.0f,             0.0f, accelMagVariance,             0.0f,
+                                                0.0f,             0.0f,             0.0f, accelMagVariance);
+                                          
+  // Swizzle the axis so that gyro's axis match overall sensor setup.
+  float gyroX = heading.m_gyroY;
+  float gyroY = heading.m_gyroZ;
+  float gyroZ = heading.m_gyroX;
+
+  // Construct matrix which applies gyro rates (derivatives) to quaternion.
+  // This will be the A matrix for the system model.
+  final float timeScale = (1.0f / 100.0f);
+  final float scaleFactor = timeScale * 0.5f;
+  gyroX *= scaleFactor;
+  gyroY *= scaleFactor;
+  gyroZ *= scaleFactor;
+  PMatrix3D A = new PMatrix3D( 1.0f, -gyroX, -gyroY, -gyroZ,
+                               gyroX,   1.0f,  gyroZ, -gyroY,
+                               gyroY, -gyroZ,   1.0f,  gyroX,
+                               gyroZ,  gyroY, -gyroX, 1.0f);
+  
+  // Calculate Kalman prediction for x and error.
+  float[] xPredicted = new float[4];
+  A.mult(currentQuaternion, xPredicted);
+  quaternionNormalize(xPredicted);
+  
+  PMatrix3D PPredicted = A.get();
+  PMatrix3D ATranspose = A.get();
+  ATranspose.transpose();
+  PPredicted.apply(g_embeddedP);
+  PPredicted.apply(ATranspose);
+  matrixAdd(PPredicted, Q);
+  
+  // Calculate the Kalman gain.
+  // Simplified a bit since the H matrix is the identity matrix.
+  PMatrix3D K = PPredicted.get();
+  PMatrix3D temp = PPredicted.get();
+  matrixAdd(temp, R);
+  temp.invert();
+  K.apply(temp);
+
+  // Fetch the accelerometer/magnetometer measurements as a quaternion.
+  float[] z = calculateAccelMagRotation(heading);
+    
+  // Flip the quaternion (q == -q for quaternions) if the angle is obtuse.
+  if (quaternionDot(z, xPredicted) < 0.0f)
+  {
+    quaternionFlip(z);
+  }
+  
+  // Calculate the Kalman estimates.
+  // Again, simplified a bit since H is the identity matrix.
+  temp = K.get();
+  float[] correction = new float[4];
+  quaternionSubtract(z, xPredicted);
+  temp.mult(z, correction);
+  quaternionAdd(xPredicted, correction);
+  float[] x = xPredicted;
+  
+  temp = K.get();
+  temp.apply(PPredicted);
+  matrixSubtract(PPredicted, temp);
+  g_embeddedP = PPredicted;
+  
+  return x;
+}
+
 void matrixAdd(PMatrix3D m1, PMatrix3D m2)
 {
   m1.m00 += m2.m00;
@@ -553,6 +658,27 @@ void keyPressed()
                                         0.0f, g_initVariance,           0.0f,           0.0f,
                                         0.0f,           0.0f, g_initVariance,           0.0f, 
                                         0.0f,           0.0f,           0.0f, g_initVariance);
+    g_embeddedP = new PMatrix3D(g_initVariance,           0.0f,           0.0f,           0.0f,
+                                          0.0f, g_initVariance,           0.0f,           0.0f,
+                                          0.0f,           0.0f, g_initVariance,           0.0f, 
+                                          0.0f,           0.0f,           0.0f, g_initVariance);
+    break;
+  case 'e':
+    g_rotationSource = EMBEDDED;
+    g_kalmanP = new PMatrix3D(g_initVariance,           0.0f,           0.0f,           0.0f,
+                                        0.0f, g_initVariance,           0.0f,           0.0f,
+                                        0.0f,           0.0f, g_initVariance,           0.0f, 
+                                        0.0f,           0.0f,           0.0f, g_initVariance);
+    g_embeddedP = new PMatrix3D(g_initVariance,           0.0f,           0.0f,           0.0f,
+                                          0.0f, g_initVariance,           0.0f,           0.0f,
+                                          0.0f,           0.0f, g_initVariance,           0.0f, 
+                                          0.0f,           0.0f,           0.0f, g_initVariance);
+    // Ask the Kalman filter running on the embedded device to reset itself.
+    if (g_serial != null)
+    {
+      g_serial.write('R');
+    }
+    
     break;
   }
 }

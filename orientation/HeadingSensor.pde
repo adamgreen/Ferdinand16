@@ -1,4 +1,4 @@
-/*  Copyright (C) 2014  Adam Green (https://github.com/adamgreen)
+/*  Copyright (C) 2016  Adam Green (https://github.com/adamgreen)
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -74,24 +74,79 @@ class HeadingSensor
       return false;
       
     String[] tokens = splitTokens(line, ",\n");
-    if (tokens.length == 11)
+    if (tokens.length == 22 || tokens.length == 21)
     {
-      m_currentRaw.m_accelX = int(tokens[0]);
-      m_currentRaw.m_accelY = int(tokens[1]);
-      m_currentRaw.m_accelZ = int(tokens[2]);
-      m_currentRaw.m_magX = int(tokens[3]);
-      m_currentRaw.m_magY = int(tokens[4]);
-      m_currentRaw.m_magZ = int(tokens[5]);
-      m_currentRaw.m_gyroX = int(tokens[6]);
-      m_currentRaw.m_gyroY = int(tokens[7]);
-      m_currentRaw.m_gyroZ = int(tokens[8]);
-      m_currentRaw.m_gyroTemperature = int(tokens[9]);
+      int nextToken = 0;
+      
+      if (tokens.length == 22 && tokens[0].equals("R"))
+      {
+        m_resetRequested = true;
+        nextToken++;
+      }
+      
+      int firstToken = nextToken;
+      m_currentRaw.m_accelX = int(tokens[nextToken++]);
+      m_currentRaw.m_accelY = int(tokens[nextToken++]);
+      m_currentRaw.m_accelZ = int(tokens[nextToken++]);
+      m_currentRaw.m_magX = int(tokens[nextToken++]);
+      m_currentRaw.m_magY = int(tokens[nextToken++]);
+      m_currentRaw.m_magZ = int(tokens[nextToken++]);
+      m_currentRaw.m_gyroX = int(tokens[nextToken++]);
+      m_currentRaw.m_gyroY = int(tokens[nextToken++]);
+      m_currentRaw.m_gyroZ = int(tokens[nextToken++]);
+      m_currentRaw.m_gyroTemperature = int(tokens[nextToken++]);
       
       for (int i = 0 ; i < m_averages.length ; i++)
-        m_averages[i].update(int(tokens[i]));
+        m_averages[i].update(int(tokens[firstToken + i]));
    
       m_max = m_max.max(m_currentRaw);
       m_min = m_min.min(m_currentRaw);
+      
+      // UNDONE: Just for testing purposes.
+      FloatHeading testHeading = getCurrent();
+      FloatHeading embeddedHeading = new FloatHeading();
+      // UNDONE: Skip time tokens.
+      nextToken++; nextToken++;
+      embeddedHeading.m_accelX = float(tokens[nextToken++]);
+      embeddedHeading.m_accelY = float(tokens[nextToken++]);
+      embeddedHeading.m_accelZ = float(tokens[nextToken++]);
+      embeddedHeading.m_magX = float(tokens[nextToken++]);
+      embeddedHeading.m_magY = float(tokens[nextToken++]);
+      embeddedHeading.m_magZ = float(tokens[nextToken++]);
+      embeddedHeading.m_gyroX = float(tokens[nextToken++]);
+      embeddedHeading.m_gyroY = float(tokens[nextToken++]);
+      embeddedHeading.m_gyroZ = float(tokens[nextToken++]);
+
+      float diff;
+      diff = abs(embeddedHeading.m_accelX - testHeading.m_accelX);
+      if (diff > g_floatThreshold)
+        println("m_accelX diff: " + diff);
+      diff = abs(embeddedHeading.m_accelY - testHeading.m_accelY);
+      if (diff > g_floatThreshold)
+        println("m_accelY diff: " + diff);
+      diff = abs(embeddedHeading.m_accelZ - testHeading.m_accelZ);
+      if (diff > g_floatThreshold)
+        println("m_accelZ diff: " + diff);
+
+      diff = abs(embeddedHeading.m_magX - testHeading.m_magX);
+      if (diff > g_floatThreshold)
+        println("m_magX diff: " + diff);
+      diff = abs(embeddedHeading.m_magY - testHeading.m_magY);
+      if (diff > g_floatThreshold)
+        println("m_magY diff: " + diff);
+      diff = abs(embeddedHeading.m_magZ - testHeading.m_magZ);
+      if (diff > g_floatThreshold)
+        println("m_magZ diff: " + diff);
+
+      diff = abs(embeddedHeading.m_gyroX - testHeading.m_gyroX);
+      if (diff > g_floatThreshold)
+        println("m_gyroX diff: " + diff);
+      diff = abs(embeddedHeading.m_gyroY - testHeading.m_gyroY);
+      if (diff > g_floatThreshold)
+        println("m_gyroY diff: " + diff);
+      diff = abs(embeddedHeading.m_gyroZ - testHeading.m_gyroZ);
+      if (diff > g_floatThreshold)
+        println("m_gyroZ diff: " + diff);
       
       return true;
     }
@@ -170,6 +225,13 @@ class HeadingSensor
     return m_max;
   }
   
+  boolean wasResetRequested()
+  {
+    boolean curr = m_resetRequested;
+    m_resetRequested = false;
+    return curr;
+  }
+  
   HeadingSensorCalibration m_calibration;
   Serial  m_port;
   Heading m_currentRaw = new Heading();
@@ -182,5 +244,6 @@ class HeadingSensor
   FloatHeading    m_midpoint;
   FloatHeading    m_scale;
   MovingAverage[] m_averages;
+  boolean         m_resetRequested = false;
 };
 
