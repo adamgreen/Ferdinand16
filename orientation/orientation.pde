@@ -1,4 +1,4 @@
-/*  Copyright (C) 2014  Adam Green (https://github.com/adamgreen)
+/*  Copyright (C) 2016  Adam Green (https://github.com/adamgreen)
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -295,16 +295,6 @@ void serialEvent(Serial port)
   // Calculate rotation using embedded device's Kalman filter.
   float[] embeddedQuaternion = calculateEmbeddedKalmanRotation(heading, g_rotationQuaternion);
   
-  // Compare new Kalman filter code results to that of the older version.
-  for (int i = 0 ; i < 4 ; i++)
-  {
-    float diff = abs(kalmanQuaternion[i] - embeddedQuaternion[i]);
-    if (diff > g_floatThreshold)
-    {
-      println("quaternion[" + i + "] diff = " + diff);
-    }
-  }
-
   // Select which rotation quaternion to actually use for rendering.
   switch (g_rotationSource)
   {
@@ -318,7 +308,7 @@ void serialEvent(Serial port)
     g_rotationQuaternion = kalmanQuaternion;
     break;
   case EMBEDDED:
-    g_rotationQuaternion = kalmanQuaternion;
+    g_rotationQuaternion = embeddedQuaternion;
     break;
   }
 }
@@ -522,79 +512,21 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
 
 float[] calculateEmbeddedKalmanRotation(FloatHeading heading, float[] currentQuaternion)
 {
-  // System model covariance matrices which don't change.
-  final float gyroVariance = 6.5E-11;
-  final float accelMagVariance = 1.0E-5;
-  final PMatrix3D Q = new PMatrix3D(gyroVariance,         0.0f,         0.0f,         0.0f,
-                                            0.0f, gyroVariance,         0.0f,         0.0f,
-                                            0.0f,         0.0f, gyroVariance,         0.0f,
-                                            0.0f,         0.0f,         0.0f, gyroVariance);
-  final PMatrix3D R = new PMatrix3D(accelMagVariance,             0.0f,             0.0f,             0.0f,
-                                                0.0f, accelMagVariance,             0.0f,             0.0f,
-                                                0.0f,             0.0f, accelMagVariance,             0.0f,
-                                                0.0f,             0.0f,             0.0f, accelMagVariance);
-                                          
-  // Swizzle the axis so that gyro's axis match overall sensor setup.
-  float gyroX = heading.m_gyroY;
-  float gyroY = heading.m_gyroZ;
-  float gyroZ = heading.m_gyroX;
-
-  // Construct matrix which applies gyro rates (derivatives) to quaternion.
-  // This will be the A matrix for the system model.
-  final float timeScale = (1.0f / 100.0f);
-  final float scaleFactor = timeScale * 0.5f;
-  gyroX *= scaleFactor;
-  gyroY *= scaleFactor;
-  gyroZ *= scaleFactor;
-  PMatrix3D A = new PMatrix3D( 1.0f, -gyroX, -gyroY, -gyroZ,
-                               gyroX,   1.0f,  gyroZ, -gyroY,
-                               gyroY, -gyroZ,   1.0f,  gyroX,
-                               gyroZ,  gyroY, -gyroX, 1.0f);
+  // Fetch the accelerometer/magnetometer measurements as a quaternion, both the one calculated on the PC and the one calculated on the embedded device.
+  float[] localQuaternion = calculateAccelMagRotation(heading);
+  float[] embeddedQuaternion = g_headingSensor.getEmbeddedQuaternion();
   
-  // Calculate Kalman prediction for x and error.
-  float[] xPredicted = new float[4];
-  A.mult(currentQuaternion, xPredicted);
-  quaternionNormalize(xPredicted);
-  
-  PMatrix3D PPredicted = A.get();
-  PMatrix3D ATranspose = A.get();
-  ATranspose.transpose();
-  PPredicted.apply(g_embeddedP);
-  PPredicted.apply(ATranspose);
-  matrixAdd(PPredicted, Q);
-  
-  // Calculate the Kalman gain.
-  // Simplified a bit since the H matrix is the identity matrix.
-  PMatrix3D K = PPredicted.get();
-  PMatrix3D temp = PPredicted.get();
-  matrixAdd(temp, R);
-  temp.invert();
-  K.apply(temp);
-
-  // Fetch the accelerometer/magnetometer measurements as a quaternion.
-  float[] z = calculateAccelMagRotation(heading);
-    
-  // Flip the quaternion (q == -q for quaternions) if the angle is obtuse.
-  if (quaternionDot(z, xPredicted) < 0.0f)
+  // Compare locally calculated quaternion from accelerometers/magnetometers to that calculated on embedded device.
+  for (int i = 0 ; i < 4 ; i++)
   {
-    quaternionFlip(z);
+    float diff = abs(localQuaternion[i] - embeddedQuaternion[i]);
+    if (diff > g_floatThreshold)
+    {
+      println("quaternion[" + i + "] diff = " + diff);
+    }
   }
-  
-  // Calculate the Kalman estimates.
-  // Again, simplified a bit since H is the identity matrix.
-  temp = K.get();
-  float[] correction = new float[4];
-  quaternionSubtract(z, xPredicted);
-  temp.mult(z, correction);
-  quaternionAdd(xPredicted, correction);
-  float[] x = xPredicted;
-  
-  temp = K.get();
-  temp.apply(PPredicted);
-  matrixSubtract(PPredicted, temp);
-  g_embeddedP = PPredicted;
-  
-  return x;
+
+  return embeddedQuaternion;
 }
 
 void matrixAdd(PMatrix3D m1, PMatrix3D m2)

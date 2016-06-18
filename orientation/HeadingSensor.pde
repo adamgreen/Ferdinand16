@@ -74,11 +74,11 @@ class HeadingSensor
       return false;
       
     String[] tokens = splitTokens(line, ",\n");
-    if (tokens.length == 22 || tokens.length == 21)
+    if (tokens.length == 17 || tokens.length == 16)
     {
       int nextToken = 0;
       
-      if (tokens.length == 22 && tokens[0].equals("R"))
+      if (tokens.length == 17 && tokens[0].equals("R"))
       {
         m_resetRequested = true;
         nextToken++;
@@ -102,52 +102,16 @@ class HeadingSensor
       m_max = m_max.max(m_currentRaw);
       m_min = m_min.min(m_currentRaw);
       
-      // UNDONE: Just for testing purposes.
-      FloatHeading testHeading = getCurrent();
-      FloatHeading embeddedHeading = new FloatHeading();
-      // UNDONE: Skip time tokens.
+      // Skip time tokens.
       nextToken++; nextToken++;
-      embeddedHeading.m_accelX = float(tokens[nextToken++]);
-      embeddedHeading.m_accelY = float(tokens[nextToken++]);
-      embeddedHeading.m_accelZ = float(tokens[nextToken++]);
-      embeddedHeading.m_magX = float(tokens[nextToken++]);
-      embeddedHeading.m_magY = float(tokens[nextToken++]);
-      embeddedHeading.m_magZ = float(tokens[nextToken++]);
-      embeddedHeading.m_gyroX = float(tokens[nextToken++]);
-      embeddedHeading.m_gyroY = float(tokens[nextToken++]);
-      embeddedHeading.m_gyroZ = float(tokens[nextToken++]);
 
-      float diff;
-      diff = abs(embeddedHeading.m_accelX - testHeading.m_accelX);
-      if (diff > g_floatThreshold)
-        println("m_accelX diff: " + diff);
-      diff = abs(embeddedHeading.m_accelY - testHeading.m_accelY);
-      if (diff > g_floatThreshold)
-        println("m_accelY diff: " + diff);
-      diff = abs(embeddedHeading.m_accelZ - testHeading.m_accelZ);
-      if (diff > g_floatThreshold)
-        println("m_accelZ diff: " + diff);
+      // Extract and store orientation quaternion calculated by embedded device.
+      float w = float(tokens[nextToken++]);
+      float x = float(tokens[nextToken++]);
+      float y = float(tokens[nextToken++]);
+      float z = float(tokens[nextToken++]);
+      m_embeddedQuaternion = quaternion(w, x, y, z);
 
-      diff = abs(embeddedHeading.m_magX - testHeading.m_magX);
-      if (diff > g_floatThreshold)
-        println("m_magX diff: " + diff);
-      diff = abs(embeddedHeading.m_magY - testHeading.m_magY);
-      if (diff > g_floatThreshold)
-        println("m_magY diff: " + diff);
-      diff = abs(embeddedHeading.m_magZ - testHeading.m_magZ);
-      if (diff > g_floatThreshold)
-        println("m_magZ diff: " + diff);
-
-      diff = abs(embeddedHeading.m_gyroX - testHeading.m_gyroX);
-      if (diff > g_floatThreshold)
-        println("m_gyroX diff: " + diff);
-      diff = abs(embeddedHeading.m_gyroY - testHeading.m_gyroY);
-      if (diff > g_floatThreshold)
-        println("m_gyroY diff: " + diff);
-      diff = abs(embeddedHeading.m_gyroZ - testHeading.m_gyroZ);
-      if (diff > g_floatThreshold)
-        println("m_gyroZ diff: " + diff);
-      
       return true;
     }
     
@@ -215,6 +179,11 @@ class HeadingSensor
                             m_currentRaw.m_gyroTemperature);                           
   }
   
+  float[] getEmbeddedQuaternion()
+  {
+    return m_embeddedQuaternion;
+  }
+  
   Heading getMin()
   {
     return m_min;
@@ -243,6 +212,7 @@ class HeadingSensor
                               0x80000000, 0x80000000, 0x80000000, 0x80000000);
   FloatHeading    m_midpoint;
   FloatHeading    m_scale;
+  float[]         m_embeddedQuaternion = new float[4];
   MovingAverage[] m_averages;
   boolean         m_resetRequested = false;
 };

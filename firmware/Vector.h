@@ -38,6 +38,42 @@ public:
         z = 0;
     }
 
+    float magnitude()
+    {
+        return sqrtf(x*x + y*y + z*z);
+    }
+
+    void normalize()
+    {
+        float magInverse = 1.0f / magnitude();
+        x *= magInverse;
+        y *= magInverse;
+        z *= magInverse;
+    }
+
+    T dotProduct(Vector<T>& v)
+    {
+        return x * v.x + y * v.y + z * v.z;
+    }
+
+    Vector<T> crossProduct(Vector<T>& v)
+    {
+        return Vector<T>(y*v.z - z*v.y,
+                         z*v.x - x*v.z,
+                         x*v.y - y*v.x);
+    }
+
+    Vector<T> multiply(T scalar)
+    {
+        return Vector<T>(x * scalar, y * scalar, z * scalar);
+    }
+
+    Vector<T> subtract(Vector<T>& v)
+    {
+        return Vector<T>(x - v.x, y - v.y, z - v.z);
+    }
+
+
     T x;
     T y;
     T z;

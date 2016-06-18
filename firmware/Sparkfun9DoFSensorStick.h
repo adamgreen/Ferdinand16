@@ -17,6 +17,7 @@
 #include "ADXL345.h"
 #include "HMC5883L.h"
 #include "ITG3200.h"
+#include "Quaternion.h"
 #include "Vector.h"
 
 typedef struct SensorValues
@@ -53,8 +54,10 @@ public:
 
     void calibrate(const SensorCalibration* pCalibration);
 
-    SensorValues getRawSensorValues();
+    SensorValues           getRawSensorValues();
     SensorCalibratedValues calibrateSensorValues(const SensorValues* pRawValues);
+    Quaternion             getOrientation(SensorCalibratedValues* pCalibratedValues);
+
     int didInitFail() { return m_failedInit; }
     int didIoFail() { return m_failedIo; }
     float getIdleTimePercent() { return m_idleTimePercent; }

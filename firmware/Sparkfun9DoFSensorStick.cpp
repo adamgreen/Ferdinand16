@@ -140,3 +140,35 @@ SensorCalibratedValues Sparkfun9DoFSensorStick::calibrateSensorValues(const Sens
 
     return calibratedValues;
 }
+
+Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCalibratedValues)
+{
+    // Setup gravity (down) and north vectors.
+    // UNDONE: Swizzling should be controlled by config.ini
+    // NOTE: The fields are swizzled to make the axis on the device match the axis on the screen.
+    Vector<float> down(pCalibratedValues->accel.y, pCalibratedValues->accel.z, pCalibratedValues->accel.x);
+    Vector<float> north(-pCalibratedValues->mag.x, pCalibratedValues->mag.z, pCalibratedValues->mag.y);
+
+    // Project the north vector onto the earth surface plane, for which gravity is the surface normal.
+    //  north.dotProduct(downNormalized) = north.magnitude * cos(theta)  NOTE: downNormalized.magnitude = 1.0f
+    //   The result of this dot product is the length of the north vector when projected onto the gravity vector since
+    //   the magnitude of the north vector is the hypotenuse of a right angle triangle and the unit gravity vector
+    //   is the side adjacent to angle theta (the angle between gravity and north vectors).
+    //  northProjectedToGravityNormal = downNormalized.multiply(north.dotProduct(downNormalized)
+    //   Multiply the unit gravity vector by the magnitude previously calculated to get the vector representing the
+    //   north vector after it has been projected onto the gravity vector.
+    //  north = north.subtract(northProjectedToGravityNormal)
+    //   Follow this projected vector down the surface normal to the plane representing the earth's surface.
+    down.normalize();
+    Vector<float> northProjectedToGravityNormal = down.multiply(north.dotProduct(down));
+    north = north.subtract(northProjectedToGravityNormal);
+    north.normalize();
+
+    // To create a rotation matrix, we need all 3 basis vectors so calculate the vector which
+    // is orthogonal to both the down and north vectors (ie. the normalized cross product).
+    Vector<float> west = north.crossProduct(down);
+    west.normalize();
+    Quaternion rotationQuaternion = Quaternion::createFromBasisVectors(north, down, west);
+
+    return rotationQuaternion;
+}

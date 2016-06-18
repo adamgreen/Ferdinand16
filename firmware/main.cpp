@@ -78,10 +78,11 @@ int main()
         if (sensorStick.didIoFail())
             error("Encountered I2C I/O error during fetch of Sparkfun 9DoF Sensor Stick readings.\n");
         SensorCalibratedValues calibratedValues = sensorStick.calibrateSensorValues(&sensorValues);
+        Quaternion orientation = sensorStick.getOrientation(&calibratedValues);
 
         int elapsedTime = timer.read_us();
         timer.reset();
-        length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+        length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f\n",
                           g_resetRequested ? "R," : "",
                           sensorValues.accel.x, sensorValues.accel.y, sensorValues.accel.z,
                           sensorValues.mag.x, sensorValues.mag.y, sensorValues.mag.z,
@@ -89,9 +90,7 @@ int main()
                           sensorValues.gyroTemperature,
                           elapsedTime,
                           sensorStick.getIdleTimePercent(),
-                          calibratedValues.accel.x, calibratedValues.accel.y, calibratedValues.accel.z,
-                          calibratedValues.mag.x, calibratedValues.mag.y, calibratedValues.mag.z,
-                          calibratedValues.gyro.x, calibratedValues.gyro.y, calibratedValues.gyro.z);
+                          orientation.w, orientation.x, orientation.y, orientation.z);
         assert( length < (int)sizeof(buffer) );
         g_resetRequested = false;
 
