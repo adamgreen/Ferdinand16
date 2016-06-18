@@ -144,10 +144,9 @@ SensorCalibratedValues Sparkfun9DoFSensorStick::calibrateSensorValues(const Sens
 Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCalibratedValues)
 {
     // Setup gravity (down) and north vectors.
-    // UNDONE: Swizzling should be controlled by config.ini
     // NOTE: The fields are swizzled to make the axis on the device match the axis on the screen.
-    Vector<float> down(pCalibratedValues->accel.y, pCalibratedValues->accel.z, pCalibratedValues->accel.x);
-    Vector<float> north(-pCalibratedValues->mag.x, pCalibratedValues->mag.z, pCalibratedValues->mag.y);
+    Vector<float> down = Vector<float>::createFromSwizzledSource(m_calibration.accelSwizzle, pCalibratedValues->accel);
+    Vector<float> north = Vector<float>::createFromSwizzledSource(m_calibration.magSwizzle, pCalibratedValues->mag);
 
     // Project the north vector onto the earth surface plane, for which gravity is the surface normal.
     //  north.dotProduct(downNormalized) = north.magnitude * cos(theta)  NOTE: downNormalized.magnitude = 1.0f

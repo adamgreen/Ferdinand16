@@ -20,31 +20,33 @@
 #include "Quaternion.h"
 #include "Vector.h"
 
-typedef struct SensorValues
+struct SensorValues
 {
     Vector<int16_t> accel;
     Vector<int16_t> mag;
     Vector<int16_t> gyro;
     int16_t         gyroTemperature;
-} SensorValues;
+};
 
-typedef struct SensorCalibratedValues
+struct SensorCalibratedValues
 {
     Vector<float> accel;
     Vector<float> mag;
     Vector<float> gyro;
-} SensorCalibratedValues;
+};
 
-typedef struct SensorCalibration
+struct SensorCalibration
 {
-  Vector<int16_t>   accelMin;
-  Vector<int16_t>   accelMax;
-  Vector<int16_t>   magMin;
-  Vector<int16_t>   magMax;
-  Vector<float>     gyroCoefficientA;
-  Vector<float>     gyroCoefficientB;
-  Vector<float>     gyroScale;
-} SensorCalibration;
+    Vector<float>     gyroCoefficientA;
+    Vector<float>     gyroCoefficientB;
+    Vector<float>     gyroScale;
+    Vector<int16_t>   accelMin;
+    Vector<int16_t>   accelMax;
+    Vector<int16_t>   magMin;
+    Vector<int16_t>   magMax;
+    Vector<int16_t>   accelSwizzle;
+    Vector<int16_t>   magSwizzle;
+};
 
 
 class Sparkfun9DoFSensorStick

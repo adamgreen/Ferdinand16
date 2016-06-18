@@ -28,7 +28,8 @@ static DmaSerial g_serial(USBTX, USBRX);
 
 
 // Function prototypes.
-void serialReceiveISR();
+static void serialReceiveISR();
+static SensorCalibration readConfigurationFile();
 
 
 int main()
@@ -44,27 +45,8 @@ int main()
     if (!fileSystem.IsMounted())
         error("Encountered error mounting FLASH file system.\n");
 
-    static ConfigFile configFile;
-    if (configFile.open("/flash/config.ini"))
-        error("Encountered error opening /flash/config.ini\n");
 
-    static SensorCalibration calibration;
-    if (!configFile.getIntVector("compass.accelerometer.min", &calibration.accelMin))
-        error("Failed to read compass.accelerometer.min\n");
-    if (!configFile.getIntVector("compass.accelerometer.max", &calibration.accelMax))
-        error("Failed to read compass.accelerometer.max\n");
-    if (!configFile.getIntVector("compass.magnetometer.min", &calibration.magMin))
-        error("Failed to read compass.magnetometer.min\n");
-    if (!configFile.getIntVector("compass.magnetometer.max", &calibration.magMax))
-        error("Failed to read compass.magnetometer.max\n");
-    if (!configFile.getFloatVector("compass.gyro.coefficient.A", &calibration.gyroCoefficientA))
-        error("Failed to read compass.gyro.coefficient.A\n");
-    if (!configFile.getFloatVector("compass.gyro.coefficient.B", &calibration.gyroCoefficientB))
-        error("Failed to read compass.gyro.coefficient.B\n");
-    if (!configFile.getFloatVector("compass.gyro.scale", &calibration.gyroScale))
-        error("Failed to read compass.gyro.scale\n");
-    configFile.close();
-
+    static SensorCalibration calibration = readConfigurationFile();
     static Sparkfun9DoFSensorStick sensorStick(p9, p10, &calibration);
     if (sensorStick.didInitFail())
         error("Encountered I2C I/O error during Sparkfun 9DoF Sensor Stick init.\n");
@@ -105,7 +87,7 @@ int main()
 }
 
 #if !MRI_ENABLE
-void serialReceiveISR()
+static void serialReceiveISR()
 {
     while (g_serial.readable())
     {
@@ -117,3 +99,33 @@ void serialReceiveISR()
     }
 }
 #endif // !MRI_ENABLE
+
+static SensorCalibration readConfigurationFile()
+{
+    ConfigFile        configFile;
+    if (configFile.open("/flash/config.ini"))
+        error("Encountered error opening /flash/config.ini\n");
+
+    SensorCalibration calibration;
+    if (!configFile.getIntVector("compass.accelerometer.min", &calibration.accelMin))
+        error("Failed to read compass.accelerometer.min\n");
+    if (!configFile.getIntVector("compass.accelerometer.max", &calibration.accelMax))
+        error("Failed to read compass.accelerometer.max\n");
+    if (!configFile.getIntVector("compass.magnetometer.min", &calibration.magMin))
+        error("Failed to read compass.magnetometer.min\n");
+    if (!configFile.getIntVector("compass.magnetometer.max", &calibration.magMax))
+        error("Failed to read compass.magnetometer.max\n");
+    if (!configFile.getFloatVector("compass.gyro.coefficient.A", &calibration.gyroCoefficientA))
+        error("Failed to read compass.gyro.coefficient.A\n");
+    if (!configFile.getFloatVector("compass.gyro.coefficient.B", &calibration.gyroCoefficientB))
+        error("Failed to read compass.gyro.coefficient.B\n");
+    if (!configFile.getFloatVector("compass.gyro.scale", &calibration.gyroScale))
+        error("Failed to read compass.gyro.scale\n");
+    if (!configFile.getIntVector("compass.accelerometer.swizzle", &calibration.accelSwizzle))
+        error("Failed to read compass.accelerometer.swizzle\n");
+    if (!configFile.getIntVector("compass.magnetometer.swizzle", &calibration.magSwizzle))
+        error("Failed to read compass.magnetometer.swizzle\n");
+
+
+    return calibration;
+}

@@ -13,6 +13,7 @@
 #ifndef VECTOR_H_
 #define VECTOR_H_
 
+#include <assert.h>
 #include <stdint.h>
 
 
@@ -26,9 +27,31 @@ public:
         this->y = y;
         this->z = z;
     }
+
     Vector()
     {
         clear();
+    }
+
+    static Vector<T> createFromSwizzledSource(Vector<int16_t>& swizzle, Vector<T>& v)
+    {
+        Vector<T> newVector;
+
+        for (int i = 0 ; i < 3 ; i++)
+        {
+            int16_t swizzleFrom = swizzle[i];
+            bool    inverse = false;
+
+            if (swizzleFrom < 0)
+            {
+                swizzleFrom = -swizzleFrom;
+                inverse = true;
+            }
+
+            newVector[i] = inverse ? -v[swizzleFrom - 1] : v[swizzleFrom - 1];
+        }
+
+        return newVector;
     }
 
     void clear()
@@ -36,6 +59,22 @@ public:
         x = 0;
         y = 0;
         z = 0;
+    }
+
+    T& operator [](int i)
+    {
+        switch (i)
+        {
+        case 0:
+            return x;
+        case 1:
+            return y;
+        case 2:
+            return z;
+        default:
+            assert(i >= 0 && i <= 2);
+            return z;
+        }
     }
 
     float magnitude()
