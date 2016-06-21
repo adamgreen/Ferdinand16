@@ -10,6 +10,59 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==June 20th, 2016
+===What I learned from Robo-Magellan 2015
+I went over to Seattle Center to watch the re-run of the Robo-Magellan 2015 competition on Sunday. It was beautiful
+weather for the event. Four robot builders took part in the competition: Will Smith, Bob Cook, Charles Glorioso, and
+Dave Coleman. All four of the bots got within viewing distance of the final cone but none managed to actually touch it.
+This was still much better results than I have seen in the last few years. The programming in these bots seems to be
+getting pretty close.
+
+I did have some takeaways from watching this event that I need to take into account for the design of my robot:
+* **Trees and benches**: There are a number of trees and benches close to the Seattle Children's Theater where the goal
+  cone is usually placed. I had previously thought that if I had a good dead reckoning system in place, I wouldn't need
+  to worry so much about obstacle avoidance but seeing the tights spots that need to be navigated between the trees and
+  benches is giving me serious doubts about that plan.\\
+  {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160620-03.jpg}}
+* **High Centering**: There are small curbs around the base of the previously mentioned trees. Some of the smaller
+  robots got high centered on those during the competition on Sunday.
+* **Steep Hill**: There are some steep hills around the Mural Lawn, especially at the northwest corner. The steepness of
+  the transition from the lawn to the western walkway decreases as you travel south so that it probably the safer path
+  for the robot to take if possible.
+* **People**: There have always been some people sitting on the Mural Lawn during the competition but in past years,
+  they would move if they saw the self-driving robots approaching them. The weather was so nice on Sunday that there
+  were several sunbathers on the lawn and about half of them didn't want to move when the bot approached. There were a
+  few times that the clock was stopped and the robot owner allowed to move the bot around the people who wouldn't move.
+  I think adding some flashing lights and the sound of a truck backing up might be a good addition to my robot.
+
+===Kalman Filter Ported to LPC1768
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160620-04.gif}}\\
+I completed the initial port of the Kalman filter to the LPC1768 last week. This work included the following commits:
+* [[https://github.com/adamgreen/Ferdinand16/commit/f32d39b205e7502e0045e3c9fd175c8fe6daa55b | Start porting orientation code to LPC1768]]
+* [[https://github.com/adamgreen/Ferdinand16/commit/2b74c0fe1629f844e95034af1a90e8ee95ea3424 | Calculate orientation quaternion from accelerometer/magnetometer]]
+* [[https://github.com/adamgreen/Ferdinand16/commit/0c7a3099b27d1fabef68079ff92be56932b5c9b1 | Swizzle accel/mag based on config.ini settings]]
+* [[https://github.com/adamgreen/Ferdinand16/commit/b99cfe091d14ba7c803ebec44c9c9f60a8ff8bfe | Kalman filter ported to LPC1768]]
+
+I had originally had worries that the floating point math required for running the Kalman filter would be too much to
+run it on the LPC1768. It turns out that this worry wasn't necessary since the ported Kalman filter ended up
+using **<11% of CPU resources**.
+
+This ported code appears to work as expected when switching the orientation.pde sample into Embedded mode (by pressing
+the E key). The orientation sample does issue println()s though indicating that there are some differences in the PC and
+embedded calculated orientation quaternions until the filter converges. The orientation quaternions calculated from gyro
+rate integration and accelerometer/magnetometer fusion on the PC and LPC1768 match with 1.0E-5. It is just the Kalman
+filter results that sometimes differ. I will start investigating these differences this week. One theory I have is that
+the PC version gets more precision by using special multiply-accumulate or dot-product instructions.
+
+===Parallax Arlo Has Arrived!
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160620-02.jpg}}
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160620-01.jpg}}\\
+My Parallax Arlo robot platform arrived last week and I plan to spend some time this week putting it together. Once I
+have it built, I can start experimenting with the motor controller and wheel encoders. Putting this together with the
+Kalman filtered orientation sensor should let me start evaluating my dead-reckoning strategy.
+
+
+
 ==June 19th, 2016
 ===Robo-Magellan 2015
 {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160619-01.jpg}}\\
