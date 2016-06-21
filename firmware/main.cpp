@@ -56,6 +56,9 @@ int main()
         char buffer[256];
         int  length;
 
+        if (g_resetRequested)
+            sensorStick.reset();
+
         SensorValues sensorValues = sensorStick.getRawSensorValues();
         if (sensorStick.didIoFail())
             error("Encountered I2C I/O error during fetch of Sparkfun 9DoF Sensor Stick readings.\n");
@@ -125,7 +128,14 @@ static SensorCalibration readConfigurationFile()
         error("Failed to read compass.accelerometer.swizzle\n");
     if (!configFile.getIntVector("compass.magnetometer.swizzle", &calibration.magSwizzle))
         error("Failed to read compass.magnetometer.swizzle\n");
-
+    if (!configFile.getIntVector("compass.gyro.swizzle", &calibration.gyroSwizzle))
+        error("Failed to read compass.gyro.swizzle\n");
+    if (!configFile.getFloat("compass.initial.variance", &calibration.initialVariance))
+        error("Failed to read compass.initial.variance\n");
+    if (!configFile.getFloat("compass.gyro.variance", &calibration.gyroVariance))
+        error("Failed to read compass.gyro.variance\n");
+    if (!configFile.getFloat("compass.accelerometer.magnetometer.variance", &calibration.accelMagVariance))
+        error("Failed to read compass.accelerometer.magnetometer.variance\n");
 
     return calibration;
 }

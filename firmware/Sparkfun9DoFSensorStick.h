@@ -19,6 +19,7 @@
 #include "ITG3200.h"
 #include "Quaternion.h"
 #include "Vector.h"
+#include "Matrix4x4.h"
 
 struct SensorValues
 {
@@ -37,6 +38,9 @@ struct SensorCalibratedValues
 
 struct SensorCalibration
 {
+    float             initialVariance;
+    float             gyroVariance;
+    float             accelMagVariance;
     Vector<float>     gyroCoefficientA;
     Vector<float>     gyroCoefficientB;
     Vector<float>     gyroScale;
@@ -46,13 +50,16 @@ struct SensorCalibration
     Vector<int16_t>   magMax;
     Vector<int16_t>   accelSwizzle;
     Vector<int16_t>   magSwizzle;
+    Vector<int16_t>   gyroSwizzle;
 };
 
 
 class Sparkfun9DoFSensorStick
 {
 public:
-    Sparkfun9DoFSensorStick(PinName sdaPin, PinName sclPin, const SensorCalibration* pCalibration = NULL);
+    Sparkfun9DoFSensorStick(PinName sdaPin, PinName sclPin,
+                            const SensorCalibration* pCalibration = NULL,
+                            uint32_t sampleRateHz = 100);
 
     void calibrate(const SensorCalibration* pCalibration);
 
@@ -60,12 +67,15 @@ public:
     SensorCalibratedValues calibrateSensorValues(const SensorValues* pRawValues);
     Quaternion             getOrientation(SensorCalibratedValues* pCalibratedValues);
 
-    int didInitFail() { return m_failedInit; }
-    int didIoFail() { return m_failedIo; }
+    void  reset() { m_resetRequested = true; }
+    int   didInitFail() { return m_failedInit; }
+    int   didIoFail() { return m_failedIo; }
     float getIdleTimePercent() { return m_idleTimePercent; }
 
 protected:
-    void tickHandler();
+    void       resetKalmanFilter(SensorCalibratedValues* pCalibratedValues);
+    Quaternion getOrientationFromAccelerometerMagnetometerMeasurements(SensorCalibratedValues* pCalibratedValues);
+    void       tickHandler();
 
     Timer                   m_totalTimer;
     Timer                   m_idleTimer;
@@ -77,13 +87,18 @@ protected:
     ITG3200                 m_gyro;
     SensorCalibratedValues  m_midpoints;
     SensorCalibratedValues  m_scales;
+    Quaternion              m_currentOrientation;
+    Matrix4x4               m_kalmanP;
+    Matrix4x4               m_kalmanQ;
+    Matrix4x4               m_kalmanR;
+    float                   m_gyroTimeScaleFactor;
     float                   m_idleTimePercent;
     volatile int            m_failedInit;
     volatile int            m_failedIo;
     volatile uint32_t       m_currentSample;
     uint32_t                m_lastSample;
     SensorValues            m_sensorValues;
-
+    bool                    m_resetRequested;
 };
 
 #endif /* SPARKFUN_9DOF_SENSOR_STICK_H_ */

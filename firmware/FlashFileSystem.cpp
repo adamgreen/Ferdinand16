@@ -356,7 +356,7 @@ void FlashFileSystemDirHandle::seekdir(off_t Location)
     
     assert ( NULL != pLocation &&
              pLocation > m_pFirstFileEntry &&
-             (pLocation - m_pFirstFileEntry) < m_FileEntriesLeft );
+             (unsigned int)(pLocation - m_pFirstFileEntry) < m_FileEntriesLeft );
     
     m_pCurrentFileEntry = pLocation;
 }

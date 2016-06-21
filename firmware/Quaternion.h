@@ -89,6 +89,43 @@ public:
         z = 0.0f;
     }
 
+    float magnitude()
+    {
+        return sqrtf(w*w + x*x + y*y + z*z);
+    }
+
+    void normalize()
+    {
+        float magInverse = 1.0f / magnitude();
+        w *= magInverse;
+        x *= magInverse;
+        y *= magInverse;
+        z *= magInverse;
+    }
+
+    float dotProduct(Quaternion& q)
+    {
+        return w * q.w + x * q.x + y * q.y + z * q.z;
+    }
+
+    void flip()
+    {
+        w = -w;
+        x = -x;
+        y = -y;
+        z = -z;
+    }
+
+    Quaternion subtract(Quaternion& q)
+    {
+        return Quaternion(w - q.w, x - q.x, y - q.y, z - q.z);
+    }
+
+    Quaternion add(Quaternion& q)
+    {
+        return Quaternion(w + q.w, x + q.x, y + q.y, z + q.z);
+    }
+
     float w;
     float x;
     float y;

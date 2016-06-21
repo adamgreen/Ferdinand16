@@ -14,9 +14,9 @@
 #include "Sparkfun9DoFSensorStick.h"
 
 
-Sparkfun9DoFSensorStick::Sparkfun9DoFSensorStick(PinName sdaPin,
-                                                 PinName sclPin,
-                                                 const SensorCalibration* pCalibration /* = NULL */) :
+Sparkfun9DoFSensorStick::Sparkfun9DoFSensorStick(PinName sdaPin, PinName sclPin,
+                                                 const SensorCalibration* pCalibration /* = NULL */,
+                                                 uint32_t sampleRateHz /* = 100 */) :
     m_i2c(sdaPin, sclPin),
     m_accel(&m_i2c),
     m_mag(&m_i2c),
@@ -27,12 +27,17 @@ Sparkfun9DoFSensorStick::Sparkfun9DoFSensorStick(PinName sdaPin,
     m_failedInit = 0;
     m_currentSample = 0;
     m_lastSample = 0;
+    // The 0.5f is part of the math that relates gyro rates to rotation derivative and is just pre-calculated here
+    // along with the time delta to improve runtime performance.
+    m_gyroTimeScaleFactor = (1.0f / sampleRateHz) * 0.5f;
+    m_resetRequested = true;
+
     calibrate(pCalibration);
 
     m_failedInit = m_accel.didInitFail() || m_mag.didInitFail() || m_gyro.didInitFail();
     m_failedIo = m_failedInit;
     if (!m_failedInit)
-        m_ticker.attach_us(this, &Sparkfun9DoFSensorStick::tickHandler, 1000000 / 100);
+        m_ticker.attach_us(this, &Sparkfun9DoFSensorStick::tickHandler, 1000000 / sampleRateHz);
 
     m_idleTimePercent = 0.0f;
     m_totalTimer.start();
@@ -63,6 +68,17 @@ void Sparkfun9DoFSensorStick::calibrate(const SensorCalibration* pCalibration)
     m_calibration.gyroScale.x = ((1.0f / m_calibration.gyroScale.x) * (float)M_PI) / 180.0f;
     m_calibration.gyroScale.y = ((1.0f / m_calibration.gyroScale.y) * (float)M_PI) / 180.0f;
     m_calibration.gyroScale.z = ((1.0f / m_calibration.gyroScale.z) * (float)M_PI) / 180.0f;
+
+    // System model covariance matrices which don't change.
+    static const float gyroVariance = m_calibration.gyroVariance;
+    static const float accelMagVariance = m_calibration.accelMagVariance;
+    m_kalmanQ.clear();
+    m_kalmanR.clear();
+    for (int i = 0 ; i < 4 ; i++)
+    {
+        m_kalmanQ.m_data[i][i] = gyroVariance;
+        m_kalmanR.m_data[i][i] = accelMagVariance;
+    }
 }
 
 
@@ -142,6 +158,78 @@ SensorCalibratedValues Sparkfun9DoFSensorStick::calibrateSensorValues(const Sens
 }
 
 Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCalibratedValues)
+{
+    if (m_resetRequested)
+        resetKalmanFilter(pCalibratedValues);
+
+    // Swizzle the axis so that gyro's axis match overall sensor setup.
+    Vector<float> gyro = Vector<float>::createFromSwizzledSource(m_calibration.gyroSwizzle, pCalibratedValues->gyro);
+
+    // Construct matrix which applies gyro rates (derivatives) to quaternion.
+    // This will be the A matrix for the system model.
+    // A = I + 0.5 * dt * |      0 -gyro.x -gyro.y -gyro.z |
+    //                    | gyro.x       0  gyro.z -gyro.y |
+    //                    | gyro.y -gyro.z       0  gyro.x |
+    //                    | gyro.z  gyro.y -gyro.x       0 |
+    gyro = gyro.multiply(m_gyroTimeScaleFactor);
+    Matrix4x4 A(  1.0f, -gyro.x, -gyro.y, -gyro.z,
+                gyro.x,    1.0f,  gyro.z, -gyro.y,
+                gyro.y, -gyro.z,    1.0f,  gyro.x,
+                gyro.z,  gyro.y, -gyro.x,  1.0f );
+
+    // Calculate Kalman prediction for x and error.
+    // xPredicted = A * prevXEstimate
+    Quaternion xPredicted = A.multiply(m_currentOrientation);
+    xPredicted.normalize();
+
+    // PPredicted = A * prevPEstimate * Atranspose + Q
+    Matrix4x4 temp1 = A.multiply(m_kalmanP);
+    Matrix4x4 temp2 = temp1.multiplyTransposed(A);
+    Matrix4x4 PPredicted = temp2.addDiagonal(m_kalmanQ);
+
+    // Calculate the Kalman gain.
+    // Simplified a bit since the H matrix is the identity matrix.
+    // K = PPredicted * I/(PPredicted + R)
+    temp1 = PPredicted.add(m_kalmanR);
+    temp2 = temp1.inverse();
+    Matrix4x4 K = PPredicted.multiply(temp2);
+
+    // Fetch the accelerometer/magnetometer measurements as a quaternion.
+    Quaternion z = getOrientationFromAccelerometerMagnetometerMeasurements(pCalibratedValues);
+    // Flip the quaternion (q == -q for quaternions) if the angle between prediction and measurement is obtuse. Each
+    // unique orientation can have two distinct quaternion representations. This code detects if the measurement is
+    // using the other representation and if it is then it flips it to the use the matching representation.
+    if (z.dotProduct(xPredicted) < 0.0f)
+    {
+        z.flip();
+    }
+
+    // Calculate the Kalman estimates.
+    // Again, simplified a bit since H is the identity matrix.
+    // xEstimate = xPredicted + K*(z - xPredicted)
+    // P = PPredicted - K*PPredicted
+    Quaternion diff = z.subtract(xPredicted);
+    Quaternion correction = K.multiply(diff);
+    m_currentOrientation = xPredicted.add(correction);
+    m_currentOrientation.normalize();
+
+    temp1 = K.multiply(PPredicted);
+    m_kalmanP = PPredicted.subtract(temp1);
+
+    return m_currentOrientation;
+}
+
+void Sparkfun9DoFSensorStick::resetKalmanFilter(SensorCalibratedValues* pCalibratedValues)
+{
+    m_kalmanP.clear();
+    for (int i = 0 ; i < 4 ; i++)
+        m_kalmanP.m_data[i][i] = m_calibration.initialVariance;
+
+    m_currentOrientation = getOrientationFromAccelerometerMagnetometerMeasurements(pCalibratedValues);
+    m_resetRequested = false;
+}
+
+Quaternion Sparkfun9DoFSensorStick::getOrientationFromAccelerometerMagnetometerMeasurements(SensorCalibratedValues* pCalibratedValues)
 {
     // Setup gravity (down) and north vectors.
     // NOTE: The fields are swizzled to make the axis on the device match the axis on the screen.

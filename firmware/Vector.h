@@ -112,7 +112,6 @@ public:
         return Vector<T>(x - v.x, y - v.y, z - v.z);
     }
 
-
     T x;
     T y;
     T z;

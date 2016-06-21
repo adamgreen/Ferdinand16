@@ -133,6 +133,20 @@ bool ConfigFile::getFloatVector(const char* pParamName, Vector<float>* pVector)
     return true;
 }
 
+bool ConfigFile::getFloat(const char* pParamName, float* pFloat)
+{
+    const char* pCurr = findParameter(pParamName);
+    if (!pCurr)
+        return false;
+
+    *pFloat = strtof(m_pCurr, (char**)&m_pCurr);
+    skipWhitespace();
+    if (*m_pCurr != '\r' && *m_pCurr != '\n' && *m_pCurr != '\0')
+        return false;
+
+    return true;
+}
+
 bool ConfigFile::skipComma()
 {
     skipWhitespace();
