@@ -10,6 +10,36 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==June 19th, 2016
+===Robo-Magellan 2015
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160619-01.jpg}}\\
+The 2015 Robo-Magellan competition was delayed due to the poor weather experienced at last year's Robothon event. It was
+re-scheduled and run at Seattle Center today. It was a beautiful day for running bots at the base of the Space Needle.
+
+The first and second place competitors came up from San Francisco and Bob Cook came down from Vancouver, BC for the
+event. The fourth competitor was Will Smith, who is from the Seattle area. None of the competitors actually tagged the
+final cone but all four competitors had runs where they got pretty close.
+
+===1st Place
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160619-02.jpg}}\\
+First place went to Charles Glorioso with the robot shown in the above photo. The animated image below shows his bot
+tagging the 0.8 bonus code during its first run:\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160619-06.gif}}\\
+
+===2nd Place
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160619-03.jpg}}\\
+Dave Coleman won second place with the robot shown in the above photo.
+
+===3rd Place
+Will Smith won third place with this robot:\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160619-04.jpg}}\\
+
+===Bob Cook
+Bob Cook also competed today with this fine robot:\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160619-05.jpg}}\\
+
+
+
 ==June 13th, 2016
 ===ESP8266 Configured for Remote Debugging/Programming
 {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160612-02.jpg}}\\
@@ -39,8 +69,6 @@ These pads are circled yellow in the image below:\\
 After I cut that trace, the charging LED would randomly blink when powered from VBAT. It appears that the MCP7381/2
 charging chip didn't like the VBAT pin to be floating when its VDD pin was powered from the battery and not USB. My
 solution to that problem was to also remove the MCP7381/2 chip, circled red in the image.
-
-
 
 ===Status as of June 13th
 My work items for last week were:
