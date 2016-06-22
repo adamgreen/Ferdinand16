@@ -50,7 +50,7 @@ using **<11% of CPU resources**.
 This ported code appears to work as expected when switching the orientation.pde sample into Embedded mode (by pressing
 the E key). The orientation sample does issue println()s though indicating that there are some differences in the PC and
 embedded calculated orientation quaternions until the filter converges. The orientation quaternions calculated from gyro
-rate integration and accelerometer/magnetometer fusion on the PC and LPC1768 match with 1.0E-5. It is just the Kalman
+rate integration and accelerometer/magnetometer fusion on the PC and LPC1768 match within 1.0E-5. It is just the Kalman
 filter results that sometimes differ. I will start investigating these differences this week. One theory I have is that
 the PC version gets more precision by using special multiply-accumulate or dot-product instructions.
 
