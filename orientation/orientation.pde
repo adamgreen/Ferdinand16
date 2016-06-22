@@ -520,6 +520,9 @@ float[] calculateEmbeddedKalmanRotation(FloatHeading heading, float[] localQuate
 {
   float[] embeddedQuaternion = g_headingSensor.getEmbeddedQuaternion();
   
+  if (g_rotationSource != EMBEDDED)
+    return embeddedQuaternion;
+    
   // Compare locally calculated quaternion from accelerometers/magnetometers to that calculated on embedded device.
   for (int i = 0 ; i < 4 ; i++)
   {

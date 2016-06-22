@@ -70,8 +70,8 @@ void Sparkfun9DoFSensorStick::calibrate(const SensorCalibration* pCalibration)
     m_calibration.gyroScale.z = ((1.0f / m_calibration.gyroScale.z) * (float)M_PI) / 180.0f;
 
     // System model covariance matrices which don't change.
-    static const float gyroVariance = m_calibration.gyroVariance;
-    static const float accelMagVariance = m_calibration.accelMagVariance;
+    float gyroVariance = m_calibration.gyroVariance;
+    float accelMagVariance = m_calibration.accelMagVariance;
     m_kalmanQ.clear();
     m_kalmanR.clear();
     for (int i = 0 ; i < 4 ; i++)

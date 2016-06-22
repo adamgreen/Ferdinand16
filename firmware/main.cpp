@@ -55,9 +55,13 @@ int main()
     {
         char buffer[256];
         int  length;
+        bool wasResetRequested = g_resetRequested;
 
-        if (g_resetRequested)
+        if (wasResetRequested)
+        {
             sensorStick.reset();
+            g_resetRequested = false;
+        }
 
         SensorValues sensorValues = sensorStick.getRawSensorValues();
         if (sensorStick.didIoFail())
@@ -68,7 +72,7 @@ int main()
         int elapsedTime = timer.read_us();
         timer.reset();
         length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f\n",
-                          g_resetRequested ? "R," : "",
+                          wasResetRequested ? "R," : "",
                           sensorValues.accel.x, sensorValues.accel.y, sensorValues.accel.z,
                           sensorValues.mag.x, sensorValues.mag.y, sensorValues.mag.z,
                           sensorValues.gyro.x, sensorValues.gyro.y, sensorValues.gyro.z,
@@ -77,7 +81,6 @@ int main()
                           sensorStick.getIdleTimePercent(),
                           orientation.w, orientation.x, orientation.y, orientation.z);
         assert( length < (int)sizeof(buffer) );
-        g_resetRequested = false;
 
 #if MRI_ENABLE
         printf("%s", buffer);
