@@ -21,6 +21,7 @@ final int EMBEDDED = 3;
 
 final float g_floatThreshold = 0.00001f;
 
+boolean                  g_resetCompleted = false;
 Serial                   g_serial;
 HeadingSensorCalibration g_calibration;
 HeadingSensor            g_headingSensor;
@@ -290,6 +291,7 @@ void serialEvent(Serial port)
                                         0.0f, g_initVariance,           0.0f,           0.0f,
                                         0.0f,           0.0f, g_initVariance,           0.0f, 
                                         0.0f,           0.0f,           0.0f, g_initVariance);
+    g_resetCompleted = true;
   }
   
   // Calculate rotation based on gyro only.
@@ -439,6 +441,25 @@ void updateAccelMagStats(float[] q)
   g_accelMagSampleCount = 0;
 }
 
+void dumpQuaternion(String name, float[] q)
+{
+  if (!g_resetCompleted)
+    return;
+  println(name + " = ");
+  println("    " + q[0] + "," + q[1] + "," + q[2] + "," + q[3]);
+}
+
+void dumpMatrix(String name, PMatrix3D m)
+{
+  if (!g_resetCompleted)
+    return;
+  println(name + " = ");
+  println("    " + m.m00 + "," + m.m01 + "," + m.m02 + "," + m.m03);
+  println("    " + m.m10 + "," + m.m11 + "," + m.m12 + "," + m.m13);
+  println("    " + m.m20 + "," + m.m21 + "," + m.m22 + "," + m.m23);
+  println("    " + m.m30 + "," + m.m31 + "," + m.m32 + "," + m.m33);
+}
+
 float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
 {
   // System model covariance matrices which don't change.
@@ -465,22 +486,31 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
   gyroX *= scaleFactor;
   gyroY *= scaleFactor;
   gyroZ *= scaleFactor;
+  
+  float[] gyroQuaternion = quaternion(0.0f, gyroX, gyroY, gyroZ); 
+  dumpQuaternion("gyro", gyroQuaternion);
+
   PMatrix3D A = new PMatrix3D( 1.0f, -gyroX, -gyroY, -gyroZ,
                                gyroX,   1.0f,  gyroZ, -gyroY,
                                gyroY, -gyroZ,   1.0f,  gyroX,
                                gyroZ,  gyroY, -gyroX, 1.0f);
+  dumpMatrix("A", A);
   
   // Calculate Kalman prediction for x and error.
+  dumpQuaternion("currentQuaternion", currentQuaternion);
   float[] xPredicted = new float[4];
   A.mult(currentQuaternion, xPredicted);
   quaternionNormalize(xPredicted);
+  dumpQuaternion("xPredicted", xPredicted);
   
+  dumpMatrix("initialP", g_kalmanP);
   PMatrix3D PPredicted = A.get();
   PMatrix3D ATranspose = A.get();
   ATranspose.transpose();
   PPredicted.apply(g_kalmanP);
   PPredicted.apply(ATranspose);
   matrixAdd(PPredicted, Q);
+  dumpMatrix("PPredicted", PPredicted);
   
   // Calculate the Kalman gain.
   // Simplified a bit since the H matrix is the identity matrix.
@@ -489,6 +519,7 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
   matrixAdd(temp, R);
   temp.invert();
   K.apply(temp);
+  dumpMatrix("K", K);
 
   // Fetch the accelerometer/magnetometer measurements as a quaternion.
   float[] z = calculateAccelMagRotation(heading);
@@ -498,6 +529,7 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
   {
     quaternionFlip(z);
   }
+  dumpQuaternion("z", z);
   
   // Calculate the Kalman estimates.
   // Again, simplified a bit since H is the identity matrix.
@@ -512,6 +544,7 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
   temp.apply(PPredicted);
   matrixSubtract(PPredicted, temp);
   g_kalmanP = PPredicted;
+  dumpMatrix("P", g_kalmanP);
   
   return x;
 }
@@ -519,7 +552,10 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
 float[] calculateEmbeddedKalmanRotation(FloatHeading heading, float[] localQuaternion)
 {
   float[] embeddedQuaternion = g_headingSensor.getEmbeddedQuaternion();
-  
+
+  if (g_rotationSource != EMBEDDED)
+    return embeddedQuaternion;
+    
   // Compare locally calculated quaternion from accelerometers/magnetometers to that calculated on embedded device.
   for (int i = 0 ; i < 4 ; i++)
   {

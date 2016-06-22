@@ -70,8 +70,8 @@ void Sparkfun9DoFSensorStick::calibrate(const SensorCalibration* pCalibration)
     m_calibration.gyroScale.z = ((1.0f / m_calibration.gyroScale.z) * (float)M_PI) / 180.0f;
 
     // System model covariance matrices which don't change.
-    static const float gyroVariance = m_calibration.gyroVariance;
-    static const float accelMagVariance = m_calibration.accelMagVariance;
+    float gyroVariance = m_calibration.gyroVariance;
+    float accelMagVariance = m_calibration.accelMagVariance;
     m_kalmanQ.clear();
     m_kalmanR.clear();
     for (int i = 0 ; i < 4 ; i++)
@@ -157,6 +157,16 @@ SensorCalibratedValues Sparkfun9DoFSensorStick::calibrateSensorValues(const Sens
     return calibratedValues;
 }
 
+Quaternion g_gyro;
+Matrix4x4  g_A;
+Quaternion g_initialX;
+Quaternion g_xPredicted;
+Matrix4x4  g_initialP;
+Matrix4x4  g_PPredicted;
+Matrix4x4  g_K;
+Quaternion g_z;
+Matrix4x4  g_P;
+
 Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCalibratedValues)
 {
     if (m_resetRequested)
@@ -172,20 +182,29 @@ Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCali
     //                    | gyro.y -gyro.z       0  gyro.x |
     //                    | gyro.z  gyro.y -gyro.x       0 |
     gyro = gyro.multiply(m_gyroTimeScaleFactor);
+    g_gyro.w = 0.0f;
+    g_gyro.x = gyro.x;
+    g_gyro.y = gyro.y;
+    g_gyro.z = gyro.z;
     Matrix4x4 A(  1.0f, -gyro.x, -gyro.y, -gyro.z,
                 gyro.x,    1.0f,  gyro.z, -gyro.y,
                 gyro.y, -gyro.z,    1.0f,  gyro.x,
                 gyro.z,  gyro.y, -gyro.x,  1.0f );
+    g_A = A;
 
     // Calculate Kalman prediction for x and error.
     // xPredicted = A * prevXEstimate
+    g_initialX = m_currentOrientation;
     Quaternion xPredicted = A.multiply(m_currentOrientation);
     xPredicted.normalize();
+    g_xPredicted = xPredicted;
 
     // PPredicted = A * prevPEstimate * Atranspose + Q
+    g_initialP = m_kalmanP;
     Matrix4x4 temp1 = A.multiply(m_kalmanP);
     Matrix4x4 temp2 = temp1.multiplyTransposed(A);
     Matrix4x4 PPredicted = temp2.addDiagonal(m_kalmanQ);
+    g_PPredicted = PPredicted;
 
     // Calculate the Kalman gain.
     // Simplified a bit since the H matrix is the identity matrix.
@@ -193,6 +212,7 @@ Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCali
     temp1 = PPredicted.add(m_kalmanR);
     temp2 = temp1.inverse();
     Matrix4x4 K = PPredicted.multiply(temp2);
+    g_K = K;
 
     // Fetch the accelerometer/magnetometer measurements as a quaternion.
     Quaternion z = getOrientationFromAccelerometerMagnetometerMeasurements(pCalibratedValues);
@@ -203,6 +223,7 @@ Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCali
     {
         z.flip();
     }
+    g_z = z;
 
     // Calculate the Kalman estimates.
     // Again, simplified a bit since H is the identity matrix.
@@ -215,6 +236,7 @@ Quaternion Sparkfun9DoFSensorStick::getOrientation(SensorCalibratedValues* pCali
 
     temp1 = K.multiply(PPredicted);
     m_kalmanP = PPredicted.subtract(temp1);
+    g_P = m_kalmanP;
 
     return m_currentOrientation;
 }

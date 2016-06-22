@@ -31,6 +31,34 @@ static DmaSerial g_serial(USBTX, USBRX);
 static void serialReceiveISR();
 static SensorCalibration readConfigurationFile();
 
+extern Quaternion g_gyro;
+extern Matrix4x4  g_A;
+extern Quaternion g_initialX;
+extern Quaternion g_xPredicted;
+extern Matrix4x4  g_initialP;
+extern Matrix4x4  g_PPredicted;
+extern Matrix4x4  g_K;
+extern Quaternion g_z;
+extern Matrix4x4  g_P;
+
+static void dumpMatrix(const char* pName, Matrix4x4* pMatrix)
+{
+    printf("%s = \n", pName);
+    for (int row = 0 ; row < 4 ; row++)
+    {
+        printf("    %.8g,%.8g,%.8g,%.8g\n",
+               pMatrix->m_data[row][0],
+               pMatrix->m_data[row][1],
+               pMatrix->m_data[row][2],
+               pMatrix->m_data[row][3]);
+    }
+}
+
+static void dumpQuaternion(const char* pName, Quaternion* pQuaternion)
+{
+    printf("%s = ", pName);
+    printf("%.8g,%.8g,%.8g,%.8g\n", pQuaternion->w, pQuaternion->x, pQuaternion->y, pQuaternion->z);
+}
 
 int main()
 {
@@ -55,9 +83,13 @@ int main()
     {
         char buffer[256];
         int  length;
+        bool wasResetRequested = g_resetRequested;
 
-        if (g_resetRequested)
+        if (wasResetRequested)
+        {
             sensorStick.reset();
+            g_resetRequested = false;
+        }
 
         SensorValues sensorValues = sensorStick.getRawSensorValues();
         if (sensorStick.didIoFail())
@@ -68,7 +100,7 @@ int main()
         int elapsedTime = timer.read_us();
         timer.reset();
         length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f\n",
-                          g_resetRequested ? "R," : "",
+                          wasResetRequested ? "R," : "",
                           sensorValues.accel.x, sensorValues.accel.y, sensorValues.accel.z,
                           sensorValues.mag.x, sensorValues.mag.y, sensorValues.mag.z,
                           sensorValues.gyro.x, sensorValues.gyro.y, sensorValues.gyro.z,
@@ -77,13 +109,36 @@ int main()
                           sensorStick.getIdleTimePercent(),
                           orientation.w, orientation.x, orientation.y, orientation.z);
         assert( length < (int)sizeof(buffer) );
-        g_resetRequested = false;
 
 #if MRI_ENABLE
         printf("%s", buffer);
 #else
         g_serial.dmaTransmit(buffer, length);
 #endif
+
+#define DUMP_MATRIX(X) dumpMatrix(#X, &X);
+#define DUMP_QUATERNION(X) dumpQuaternion(#X, &X);
+        if (wasResetRequested)
+        {
+            // Must send R again to have these dumped.
+            while (!g_resetRequested)
+            {
+            }
+
+            DUMP_QUATERNION(g_gyro);
+            DUMP_MATRIX(g_A);
+            DUMP_QUATERNION(g_initialX);
+            DUMP_QUATERNION(g_xPredicted);
+            DUMP_MATRIX(g_initialP);
+            DUMP_MATRIX(g_PPredicted);
+            DUMP_MATRIX(g_K);
+            DUMP_QUATERNION(g_z);
+            DUMP_MATRIX(g_P);
+
+            for(;;)
+            {
+            }
+        }
     }
 
     return 0;
