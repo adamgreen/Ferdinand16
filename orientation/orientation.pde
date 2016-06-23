@@ -30,6 +30,7 @@ int                      g_samples = 0;
 int                      g_lastSampleCount;
 float[]                  g_rotationQuaternion = {1.0f, 0.0f, 0.0f, 0.0f};
 int                      g_rotationSource = ACCEL_MAG;
+boolean                  g_resetCompleted = false;
 int                      g_fontHeight;
 PFont                    g_font;
 final float              g_initVariance = 1.0E-4;
@@ -290,6 +291,7 @@ void serialEvent(Serial port)
                                         0.0f, g_initVariance,           0.0f,           0.0f,
                                         0.0f,           0.0f, g_initVariance,           0.0f, 
                                         0.0f,           0.0f,           0.0f, g_initVariance);
+    g_resetCompleted = true;  
   }
   
   // Calculate rotation based on gyro only.
@@ -507,6 +509,7 @@ float[] calculateKalmanRotation(FloatHeading heading, float[] currentQuaternion)
   temp.mult(z, correction);
   quaternionAdd(xPredicted, correction);
   float[] x = xPredicted;
+  quaternionNormalize(x);
   
   temp = K.get();
   temp.apply(PPredicted);
@@ -520,7 +523,7 @@ float[] calculateEmbeddedKalmanRotation(FloatHeading heading, float[] localQuate
 {
   float[] embeddedQuaternion = g_headingSensor.getEmbeddedQuaternion();
   
-  if (g_rotationSource != EMBEDDED)
+  if (g_rotationSource != EMBEDDED || !g_resetCompleted)
     return embeddedQuaternion;
     
   // Compare locally calculated quaternion from accelerometers/magnetometers to that calculated on embedded device.
@@ -605,6 +608,7 @@ void keyPressed()
                                         0.0f,           0.0f, g_initVariance,           0.0f, 
                                         0.0f,           0.0f,           0.0f, g_initVariance);
     // Ask the Kalman filter running on the embedded device to reset itself.
+    g_resetCompleted = false;
     if (g_serial != null)
     {
       g_serial.write('R');
