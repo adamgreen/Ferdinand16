@@ -10,6 +10,33 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==June 24th, 2016
+===Kalman Filter Fixes
+After completing the port of the Kalman filter code to the LPC1768, I was experiencing floating point differences
+between the orientation quaternion calculated in the original Processing code and the new LPC1768 port. Earlier this
+week I investigated the problem and found a few bugs that contributed to these differences:
+* The C/C++ code on the LPC1768 to synchronize the resetting of the Kalman filter wasn't completely thread safe. It was
+  possible for it to signal the PC that it had reset the filter when it actually hadn't due to a concurrency bug between
+  main() and serialReceiveISR().
+* The Processing code on the PC should only check for floating point differences in the calculated orientation
+  quaternions when in Embedded mode and the reset of the Kalman filter has completed on both sides (PC and LPC1768).
+* When porting the Kalman filter code to the LPC1768, I noticed that the final quaternion result wasn't being normalized
+  and I corrected it. I had forgotten to go back and make the same change in the Processing code.
+
+Once I had fixed those bugs I no longer experienced floating point differences that exceed the 1.0E-5 threshold. The two
+versions of the Kalman filter now appear to perform exactly the same.
+
+===Arlo Under Construction
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160624-01.jpg}}\\
+I started putting my [[https://www.parallax.com/product/28966 | Parallax Arlo Complete Robot System]] together this
+week. I now have all of the major components built and wired up. The Power Distribution Board part of the kit was
+missing its PCB mounted DC Power Jack for connection to the battery charger. I have pinged Parallax about the missing
+component and I will complete the build once I have tracked down a replacement. I plan to use the included
+[[https://www.parallax.com/product/32912 | Parallax Propeller Activity Board WX]] to perform some basic system checks in
+the meantime.
+
+
+
 ==June 20th, 2016
 ===What I learned from Robo-Magellan 2015
 I went over to Seattle Center to watch the re-run of the Robo-Magellan 2015 competition on Sunday. It was beautiful
