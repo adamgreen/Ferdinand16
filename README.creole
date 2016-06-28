@@ -10,6 +10,32 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==June 28th, 2016
+===Arlo Systems Check
+I used the included [[https://www.parallax.com/product/32912 | Parallax Propeller Activity Board WX]] to perform some
+basic system checks on my [[https://www.parallax.com/product/arlo-robotic-platform-system | Arlo robot platform]] over
+the weekend. This was mostly just running through the checks documented on
+[[http://learn.parallax.com/tutorials/robot/arlo/arlo-activity-board-brain | this Parallax page]]. They were used to
+verify:
+* That the motor controller could drive the motors correctly.
+** To get the wheels to rotate at the expected rates, the test code needed to be updated to increase the PWM duty
+   cycles. My batteries might need charging.
+* That the motor controller was getting encoder counts correctly.
+** Initially it wasn't getting any counts back for the left wheel. It turns out that the cables had pulled out of the
+   encoders while I was completing the build. If this happens again out in the field then I will pop the motors off of
+   the base to gain better access to the encoder electronics and hot glue the connectors in-place. I will also check to
+   see if some of the screws need to have lock-tite applied after a few initial field runs.
+* That the Ping ultrasonic sensors were working correctly. They were!
+
+I am now waiting to hear back from Parallax about the missing DC power jack.
+
+===Other Projects!
+I plan to use this robot down time to catch up on a few work items related to the
+[[https://github.com/Smoothieware/Smoothie2 | Smoothie2 project]] this week. I will jump back in on this Robo-Magellan
+robot next week.
+
+
+
 ==June 24th, 2016
 ===Kalman Filter Fixes
 After completing the port of the Kalman filter code to the LPC1768, I was experiencing floating point differences
