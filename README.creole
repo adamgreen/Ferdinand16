@@ -24,8 +24,8 @@ capacity. The platform is now ready for further testing and then development of 
 I have made pretty good progress during the first month of this project:
 * I ported the Kalman filter based IMU code from our
   [[https://github.com/adamgreen/Ferdinand14#readme | Robo-Magellan 2014 attempt]] so that it could run on the embedded
-  LPC1768 microcontroller itself for this year's attempt. The resulting 11% of CPU utilization for this port exceeded
-  my expectations.
+  LPC1768 microcontroller itself for this year's attempt. The resulting 11% CPU utilization for this port was much
+  lower than I expected.
 * I ordered and received the [[http://charmedlabs.com/default/pixy-cmucam5/ | Pixy camera]] with
   [[http://charmedlabs.com/default/pan-tilt-kit/ | Pan/Tilt kit]]. I still have a lot of experimentation ahead of me to
   get the most out of this important component.
