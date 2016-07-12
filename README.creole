@@ -10,6 +10,38 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==July 11th, 2016
+It has been a few weeks since I last logged any progress on this project. I spent one week helping out on the
+[[https://github.com/Smoothieware/Smoothie2 | Smoothie2 project]] with quickly completed build and debugger support
+fixes. I had a few projects pop up around the house that took me away from robot building for another week. I did
+receive the correct PCB mounted DC Power Jack for my
+[[https://www.parallax.com/product/arlo-robotic-platform-system | Arlo robot platform]] from Parallax during the down
+time, got it soldered onto the Power Distribution Board, and used it to charge the robot's SLA batteries to full
+capacity. The platform is now ready for further testing and then development of the
+[[https://developer.mbed.org/platforms/mbed-LPC1768/ | mbed-LPC1768]] based control system.
+
+===June Accomplishments
+I have made pretty good progress during the first month of this project:
+* I ported the Kalman filter based IMU code from our
+  [[https://github.com/adamgreen/Ferdinand14#readme | Robo-Magellan 2014 attempt]] so that it could run on the embedded
+  LPC1768 microcontroller itself for this year's attempt. The resulting 11% of CPU utilization for this port exceeded
+  my expectations.
+* I ordered and received the [[http://charmedlabs.com/default/pixy-cmucam5/ | Pixy camera]] with
+  [[http://charmedlabs.com/default/pan-tilt-kit/ | Pan/Tilt kit]]. I still have a lot of experimentation ahead of me to
+  get the most out of this important component.
+* I ordered, received, and built the
+  [[https://www.parallax.com/product/arlo-robotic-platform-system | Arlo robot platform]].
+
+===July Goals
+My main goals for this month include:
+* Interface the LPC1768 microcontroller with the Arlo Platform. The main integration here is to develop drivers for the
+  [[https://www.parallax.com/product/28231 | DHB-10 Dual H-Bridge 10 Amp Motor Controller]] used on the Arlo. In
+  addition to controlling the motor rotations, it also provides wheel encoder counts which are crucial for dead
+  reckoning.
+* Start developing and evaluating code to run on the LPC1768 for my planned dead reckoning approach.
+
+
+
 ==June 28th, 2016
 ===Arlo Systems Check
 I used the included [[https://www.parallax.com/product/32912 | Parallax Propeller Activity Board WX]] to perform some
