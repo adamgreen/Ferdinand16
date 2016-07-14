@@ -19,6 +19,8 @@ class HeadingSensorCalibration
   public FloatVector gyroCoefficientA;
   public FloatVector gyroCoefficientB;
   public FloatVector gyroScale;
+  public IntVector   declinationCorrection;
+  public IntVector   mountingCorrection;
 };
 
 class HeadingSensor
@@ -65,6 +67,16 @@ class HeadingSensor
                                1.0f,
                                1.0f,
                                1.0f);
+    m_declinationCorrection = angleFromDegreeMinuteSecond(c.declinationCorrection);
+    m_mountingCorrection = angleFromDegreeMinuteSecond(c.mountingCorrection);
+  }
+  
+  float angleFromDegreeMinuteSecond(IntVector angle)
+  {
+    if (angle.x >= 0.0f)
+      return radians(angle.x + angle.y / 60.0f + angle.z / 3600.0f);
+    else
+      return radians(angle.x - angle.y / 60.0f - angle.z / 3600.0f);
   }
 
   boolean update()
@@ -184,6 +196,59 @@ class HeadingSensor
     return m_embeddedQuaternion;
   }
   
+  float getHeading(float[] q)
+  {
+    // Correct compass heading for declination at location where the robot is being run.
+    // Also account for how the IMU is mounted to the robot. The yaw reading is negated to
+    // flip the rotations around the y-axis so that they increase as you progress from North
+    // to East.
+    return constrainAngle(-getYaw(q) + m_declinationCorrection + m_mountingCorrection);
+  }
+
+  float constrainAngle(float angle)
+  {
+    if (angle < -PI)
+    {
+      return angle + TWO_PI;
+    }
+    else if (angle > PI)
+    {
+      return angle - TWO_PI;
+    }
+    
+    return angle;
+  }
+  
+  float getYaw(float[] q)
+  {
+    float w = q[0];
+    float x = q[1];
+    float y = q[2];
+    float z = q[3];
+  
+    return atan2(2*(x*z+y*w), 1-2*(x*x+y*y));
+  }
+  
+  float getPitch(float[] q)
+  {
+    float w = q[0];
+    float x = q[1];
+    float y = q[2];
+    float z = q[3];
+  
+    return asin(-2*(y*z-x*w));
+  }
+    
+  float getRoll(float[] q)
+  {
+    float w = q[0];
+    float x = q[1];
+    float y = q[2];
+    float z = q[3];
+  
+    return atan2(2*(x*y+z*w), 1-2*(x*x+z*z));
+  }
+
   Heading getMin()
   {
     return m_min;
@@ -212,6 +277,8 @@ class HeadingSensor
                               0x80000000, 0x80000000, 0x80000000, 0x80000000);
   FloatHeading    m_midpoint;
   FloatHeading    m_scale;
+  float           m_declinationCorrection;
+  float           m_mountingCorrection;
   float[]         m_embeddedQuaternion = new float[4];
   MovingAverage[] m_averages;
   boolean         m_resetRequested = false;

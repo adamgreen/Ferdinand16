@@ -71,7 +71,9 @@ void setup()
   g_calibration.gyroCoefficientA = configFile.getFloatVector("compass.gyro.coefficient.A");
   g_calibration.gyroCoefficientB = configFile.getFloatVector("compass.gyro.coefficient.B");
   g_calibration.gyroScale = configFile.getFloatVector("compass.gyro.scale");
-  
+  g_calibration.declinationCorrection = configFile.getIntVector("compass.declinationCorrection");
+  g_calibration.mountingCorrection = configFile.getIntVector("compass.mountingCorrection");
+
   Heading filterWidths = new Heading(16, 16, 16, 16, 16, 16, 0, 0, 0, 0);
   g_headingSensor = new HeadingSensor(port, g_calibration, filterWidths);
   g_lastSampleCount = millis();
@@ -94,23 +96,14 @@ void draw()
   // Convert rotation quaternion into a 4x4 rotation matrix to be used for rendering.
   PMatrix3D rotationMatrix = quaternionToMatrix(g_rotationQuaternion);
   
-  // Calculating yaw/pitch/roll directly from quaternion.
-  float w = g_rotationQuaternion[0];
-  float x = g_rotationQuaternion[1];
-  float y = g_rotationQuaternion[2];
-  float z = g_rotationQuaternion[3];
-
-  float yaw = atan2(2*(x*z+y*w), 1-2*(x*x+y*y));
-  float pitch = asin(-2*(y*z-x*w));
-  float roll = atan2(2*(x*y+z*w), 1-2*(x*x+z*z));
-
-  float headingAngle = yaw;
+  float headingAngle = g_headingSensor.getHeading(g_rotationQuaternion);
+  println("heading = " + degrees(headingAngle));
   
   // If the user has pressed the space key, then move the camera to face the device front.
   if (g_zeroRotation)
   {
     PVector cam = new PVector(0, (height / 2.0) / tan(radians(30.0)));
-    g_cameraAngle = -headingAngle;
+    g_cameraAngle = -g_headingSensor.getYaw(g_rotationQuaternion);
     cam.rotate(g_cameraAngle);
     camera(cam.x + width/2.0, height/2.0, cam.y, width/2.0, height/2.0, 0, 0, 1, 0);
     g_zeroRotation = false;
@@ -199,6 +192,9 @@ void drawBox()
 
 void drawCompass(float angle)
 {
+  // Adjust heading angle so that the rendered needle points up when robot is facing north (angle == 0).
+  angle = g_headingSensor.constrainAngle(angle - PI);
+  
   rotateX(radians(-90));
 
   noStroke();
