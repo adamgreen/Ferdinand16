@@ -44,6 +44,8 @@ struct SensorCalibration
     Vector<float>     gyroCoefficientA;
     Vector<float>     gyroCoefficientB;
     Vector<float>     gyroScale;
+    Vector<float>     declinationCorrection;
+    Vector<float>     mountingCorrection;
     Vector<int16_t>   accelMin;
     Vector<int16_t>   accelMax;
     Vector<int16_t>   magMin;
@@ -66,6 +68,11 @@ public:
     SensorValues           getRawSensorValues();
     SensorCalibratedValues calibrateSensorValues(const SensorValues* pRawValues);
     Quaternion             getOrientation(SensorCalibratedValues* pCalibratedValues);
+    float                  getHeading(Quaternion* pOrientation);
+    float                  getYaw(Quaternion* pOrientation);
+    float                  getPitch(Quaternion* pOrientation);
+    float                  getRoll(Quaternion* pOrientation);
+    static float           constrainAngle(float angle);
 
     void  reset() { m_resetRequested = true; }
     int   didInitFail() { return m_failedInit; }
@@ -73,9 +80,10 @@ public:
     float getIdleTimePercent() { return m_idleTimePercent; }
 
 protected:
-    void       resetKalmanFilter(SensorCalibratedValues* pCalibratedValues);
-    Quaternion getOrientationFromAccelerometerMagnetometerMeasurements(SensorCalibratedValues* pCalibratedValues);
-    void       tickHandler();
+    void         resetKalmanFilter(SensorCalibratedValues* pCalibratedValues);
+    Quaternion   getOrientationFromAccelerometerMagnetometerMeasurements(SensorCalibratedValues* pCalibratedValues);
+    static float angleFromDegreeMinuteSecond(Vector<float>* pAngle);
+    void         tickHandler();
 
     Timer                   m_totalTimer;
     Timer                   m_idleTimer;
@@ -93,6 +101,8 @@ protected:
     Matrix4x4               m_kalmanR;
     float                   m_gyroTimeScaleFactor;
     float                   m_idleTimePercent;
+    float                   m_declinationCorrection;
+    float                   m_mountingCorrection;
     volatile int            m_failedInit;
     volatile int            m_failedIo;
     volatile uint32_t       m_currentSample;

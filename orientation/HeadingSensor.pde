@@ -86,11 +86,11 @@ class HeadingSensor
       return false;
       
     String[] tokens = splitTokens(line, ",\n");
-    if (tokens.length == 17 || tokens.length == 16)
+    if (tokens.length == 18 || tokens.length == 17)
     {
       int nextToken = 0;
       
-      if (tokens.length == 17 && tokens[0].equals("R"))
+      if (tokens.length == 18 && tokens[0].equals("R"))
       {
         m_resetRequested = true;
         nextToken++;
@@ -123,6 +123,9 @@ class HeadingSensor
       float y = float(tokens[nextToken++]);
       float z = float(tokens[nextToken++]);
       m_embeddedQuaternion = quaternion(w, x, y, z);
+      
+      // Extract and store heading angle as caclulated by embedded device.
+      m_embeddedHeadingAngle = float(tokens[nextToken++]);
 
       return true;
     }
@@ -194,6 +197,11 @@ class HeadingSensor
   float[] getEmbeddedQuaternion()
   {
     return m_embeddedQuaternion;
+  }
+  
+  float getEmbeddedHeadingAngle()
+  {
+    return m_embeddedHeadingAngle;
   }
   
   float getHeading(float[] q)
@@ -280,6 +288,7 @@ class HeadingSensor
   float           m_declinationCorrection;
   float           m_mountingCorrection;
   float[]         m_embeddedQuaternion = new float[4];
+  float           m_embeddedHeadingAngle = -TWO_PI;
   MovingAverage[] m_averages;
   boolean         m_resetRequested = false;
 };

@@ -79,8 +79,22 @@ void Sparkfun9DoFSensorStick::calibrate(const SensorCalibration* pCalibration)
         m_kalmanQ.m_data[i][i] = gyroVariance;
         m_kalmanR.m_data[i][i] = accelMagVariance;
     }
+
+    m_declinationCorrection = angleFromDegreeMinuteSecond(&m_calibration.declinationCorrection);
+    m_mountingCorrection = angleFromDegreeMinuteSecond(&m_calibration.mountingCorrection);
 }
 
+float Sparkfun9DoFSensorStick::angleFromDegreeMinuteSecond(Vector<float>* pAngle)
+{
+    float angleInDegrees;
+
+    if (pAngle->x >= 0.0f)
+        angleInDegrees = pAngle->x + pAngle->y / 60.0f + pAngle->z / 3600.0f;
+    else
+        angleInDegrees = pAngle->x - pAngle->y / 60.0f - pAngle->z / 3600.0f;
+
+    return (angleInDegrees * (float)M_PI) / 180.0f;
+}
 
 void Sparkfun9DoFSensorStick::tickHandler()
 {
@@ -258,4 +272,53 @@ Quaternion Sparkfun9DoFSensorStick::getOrientationFromAccelerometerMagnetometerM
     Quaternion rotationQuaternion = Quaternion::createFromBasisVectors(north, down, west);
 
     return rotationQuaternion;
+}
+
+float Sparkfun9DoFSensorStick::getHeading(Quaternion* pOrientation)
+{
+    // Correct compass heading for declination at location where the robot is being run.
+    // Also account for how the IMU is mounted to the robot. The yaw reading is negated to
+    // flip the rotations around the y-axis so that they increase as you progress from North
+    // to East.
+    return constrainAngle(-getYaw(pOrientation) + m_declinationCorrection + m_mountingCorrection);
+}
+
+float Sparkfun9DoFSensorStick::constrainAngle(float angle)
+{
+    if (angle < -(float)M_PI)
+        return angle + 2.0f*(float)M_PI;
+    else if (angle > (float)M_PI)
+        return angle - 2.0f*(float)M_PI;
+    else
+        return angle;
+}
+
+float Sparkfun9DoFSensorStick::getYaw(Quaternion* pOrientation)
+{
+    float w = pOrientation->w;
+    float x = pOrientation->x;
+    float y = pOrientation->y;
+    float z = pOrientation->z;
+
+    return atan2f(2.0f*(x*z+y*w), 1.0f-2.0f*(x*x+y*y));
+}
+
+float Sparkfun9DoFSensorStick::getPitch(Quaternion* pOrientation)
+{
+    float w = pOrientation->w;
+    float x = pOrientation->x;
+    float y = pOrientation->y;
+    float z = pOrientation->z;
+
+    return asinf(-2.0f*(y*z-x*w));
+}
+
+float Sparkfun9DoFSensorStick::getRoll(Quaternion* pOrientation)
+{
+    float w = pOrientation->w;
+    float x = pOrientation->x;
+    float y = pOrientation->y;
+    float z = pOrientation->z;
+
+    return atan2f(2.0f*(x*y+z*w), 1.0f-2.0f*(x*x+z*z));
 }

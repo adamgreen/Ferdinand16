@@ -97,7 +97,6 @@ void draw()
   PMatrix3D rotationMatrix = quaternionToMatrix(g_rotationQuaternion);
   
   float headingAngle = g_headingSensor.getHeading(g_rotationQuaternion);
-  println("heading = " + degrees(headingAngle));
   
   // If the user has pressed the space key, then move the camera to face the device front.
   if (g_zeroRotation)
@@ -531,6 +530,16 @@ float[] calculateEmbeddedKalmanRotation(FloatHeading heading, float[] localQuate
       println("quaternion[" + i + "] diff = " + diff);
     }
   }
+  
+  // Compare locally calculated heading angle to that calculated on embedded device.
+  float embeddedHeadingAngle = g_headingSensor.getEmbeddedHeadingAngle();
+  float localHeadingAngle = g_headingSensor.getHeading(localQuaternion); 
+  float diff = abs(localHeadingAngle - embeddedHeadingAngle);
+  if (diff > g_floatThreshold)
+  {
+    println("headingAngle diff = " + diff);
+  }
+  
 
   return embeddedQuaternion;
 }

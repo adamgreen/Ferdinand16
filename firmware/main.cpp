@@ -68,10 +68,11 @@ int main()
             error("Encountered I2C I/O error during fetch of Sparkfun 9DoF Sensor Stick readings.\n");
         SensorCalibratedValues calibratedValues = sensorStick.calibrateSensorValues(&sensorValues);
         Quaternion orientation = sensorStick.getOrientation(&calibratedValues);
+        float headingAngle = sensorStick.getHeading(&orientation);
 
         int elapsedTime = timer.read_us();
         timer.reset();
-        length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f\n",
+        length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f,%f\n",
                           wasResetRequested ? "R," : "",
                           sensorValues.accel.x, sensorValues.accel.y, sensorValues.accel.z,
                           sensorValues.mag.x, sensorValues.mag.y, sensorValues.mag.z,
@@ -79,7 +80,8 @@ int main()
                           sensorValues.gyroTemperature,
                           elapsedTime,
                           sensorStick.getIdleTimePercent(),
-                          orientation.w, orientation.x, orientation.y, orientation.z);
+                          orientation.w, orientation.x, orientation.y, orientation.z,
+                          headingAngle);
         assert( length < (int)sizeof(buffer) );
 
 #if MRI_ENABLE
@@ -139,6 +141,10 @@ static SensorCalibration readConfigurationFile()
         error("Failed to read compass.gyro.variance\n");
     if (!configFile.getFloat("compass.accelerometer.magnetometer.variance", &calibration.accelMagVariance))
         error("Failed to read compass.accelerometer.magnetometer.variance\n");
+    if (!configFile.getFloatVector("compass.declinationCorrection", &calibration.declinationCorrection))
+        error("Failed to read compass.declinationCorrection\n");
+    if (!configFile.getFloatVector("compass.mountingCorrection", &calibration.mountingCorrection))
+        error("Failed to read compass.mountingCorrection\n");
 
     return calibration;
 }
