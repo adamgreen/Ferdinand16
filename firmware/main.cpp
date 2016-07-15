@@ -19,8 +19,19 @@
 #include "files.h"
 #include "Sparkfun9DoFSensorStick.h"
 
+enum OUTPUT_MODE
+{
+    // Original output mode which just returned raw sensor readings, temperature, and sample interval.
+    // Start up in this mode on reset.
+    OUTPUT_ORIGINAL,
 
-static volatile bool g_resetRequested = false;
+    // Original output + Kalman calculated quaternion + compass heading + idle CPU %.
+    // Switch to this mode once we have received a reset request.
+    OUTPUT_KALMAN
+};
+
+static volatile bool        g_resetRequested = false;
+static volatile OUTPUT_MODE g_outputMode = OUTPUT_ORIGINAL;
 
 #if !MRI_ENABLE
 static DmaSerial g_serial(USBTX, USBRX);
@@ -72,16 +83,32 @@ int main()
 
         int elapsedTime = timer.read_us();
         timer.reset();
-        length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f,%f\n",
-                          wasResetRequested ? "R," : "",
-                          sensorValues.accel.x, sensorValues.accel.y, sensorValues.accel.z,
-                          sensorValues.mag.x, sensorValues.mag.y, sensorValues.mag.z,
-                          sensorValues.gyro.x, sensorValues.gyro.y, sensorValues.gyro.z,
-                          sensorValues.gyroTemperature,
-                          elapsedTime,
-                          sensorStick.getIdleTimePercent(),
-                          orientation.w, orientation.x, orientation.y, orientation.z,
-                          headingAngle);
+
+        switch (g_outputMode)
+        {
+        case OUTPUT_ORIGINAL:
+            length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+                              wasResetRequested ? "R," : "",
+                              sensorValues.accel.x, sensorValues.accel.y, sensorValues.accel.z,
+                              sensorValues.mag.x, sensorValues.mag.y, sensorValues.mag.z,
+                              sensorValues.gyro.x, sensorValues.gyro.y, sensorValues.gyro.z,
+                              sensorValues.gyroTemperature,
+                              elapsedTime);
+            break;
+        case OUTPUT_KALMAN:
+        default:
+            length = snprintf(buffer, sizeof(buffer), "%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%f,%f,%f,%f,%f\n",
+                              wasResetRequested ? "R," : "",
+                              sensorValues.accel.x, sensorValues.accel.y, sensorValues.accel.z,
+                              sensorValues.mag.x, sensorValues.mag.y, sensorValues.mag.z,
+                              sensorValues.gyro.x, sensorValues.gyro.y, sensorValues.gyro.z,
+                              sensorValues.gyroTemperature,
+                              elapsedTime,
+                              sensorStick.getIdleTimePercent(),
+                              orientation.w, orientation.x, orientation.y, orientation.z,
+                              headingAngle);
+            break;
+        }
         assert( length < (int)sizeof(buffer) );
 
 #if MRI_ENABLE
@@ -103,6 +130,7 @@ static void serialReceiveISR()
         if (byte == 'R')
         {
             g_resetRequested = true;
+            g_outputMode = OUTPUT_KALMAN;
         }
     }
 }

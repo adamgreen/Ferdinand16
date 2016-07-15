@@ -86,7 +86,7 @@ class HeadingSensor
       return false;
       
     String[] tokens = splitTokens(line, ",\n");
-    if (tokens.length == 18 || tokens.length == 17)
+    if (tokens.length == 11 || tokens.length == 18 || tokens.length == 17)
     {
       int nextToken = 0;
       
@@ -114,6 +114,10 @@ class HeadingSensor
       m_max = m_max.max(m_currentRaw);
       m_min = m_min.min(m_currentRaw);
       
+      // Handle the fact that the firmware only returns the raw sensor measurements after reset.
+      if (tokens.length < 17)
+        return true;
+        
       // Skip time tokens.
       nextToken++; nextToken++;
 
