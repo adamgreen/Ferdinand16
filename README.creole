@@ -10,6 +10,49 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==July 18th, 2016
+===IMU Updates
+There were a few more changes that needed to be made to the IMU code before it would be ready for my dead reckoning
+experiments. These changes include:
+* I modified the orientation Processing sample's calculation of the compass heading so that it would be closer to what I
+  expect my future navigation code to require:
+** Return a heading angle of 0 when the robot is facing north.
+** Return a heading angle of PI/2 radians when the robot is facing east and an angle of -PI/2 radians when facing west.
+** Add configuration options to calibrate for the magnetic declination error at the location where the robot is being
+   run and to account for how the IMU is mounted on the robot. The current settings seen in the following snippet are
+   for Redmond, WA with the IMU project box mounted such that the USB cable connects towards the rear of the robot.
+{{{
+# This vector specifies the declination correction to be applied to
+# convert magnetic north to true north.
+# It can be calculated here: http://www.ngdc.noaa.gov/geomag-web/#declination
+# The 3 element vector represents: degrees,minutes,seconds
+compass.declinationCorrection=15,54,0
+
+# Correct for how device is mounted on robot.
+# The 3 element vector represents: degrees,minutes,seconds
+compass.mountingCorrection=-90,0,0
+}}}
+* I ported the compass heading calculation so that it can now run on the LPC1768 to be embedded on the robot itself. The
+  orientation sample contains verification code which logs an error if the compass heading it calculates from the raw
+  sensor measurements mismatches what is calculated on the LPC1768.
+* The LPC1768 firmware now starts up in a mode where it only returns the raw sensor measurements. This allows it to be
+  used with my older [[https://github.com/adamgreen/Ferdinand14 | Ferdinand14]] Processing samples such as
+  [[https://github.com/adamgreen/Ferdinand14/tree/master/calibration | the calibration utility]]. Once a reset command
+  is sent over the serial connection from the PC, the Kalman filter state is initialized and the output mode is switched
+  so that it now appends the orientation quaternion and the compass heading angle to the output.
+
+===The Week Ahead
+Last week was a good week for getting back into the swing of things with this Robo-Magellan bot and I want to keep the
+momentum going with these items:
+* Interface the LPC1768 microcontroller to the
+  [[https://www.parallax.com/product/28231 | Parallax DHB-10 Dual Motor Controller]]. I initially plan to use the LPC1768
+  and ESP8266 remote debugging/programming prototype that I already have setup on a breadboard.
+* Move the ESP8266 WiFi module and serial based motor controller connection into the prototyping box which already
+  houses the IMU hardware. Once all of the components/connections are securely soldered inside of this box, the
+  development and testing of the actual dead reckoning firmware may commence.
+
+
+
 ==July 11th, 2016
 It has been a few weeks since I last logged any progress on this project. I spent one week helping out on the
 [[https://github.com/Smoothieware/Smoothie2 | Smoothie2 project]] with quickly completed build and debugger support
