@@ -8,4 +8,5 @@
 *.d
 *.a
 mri.log
+socket.log
 firmware/heading/files.h
