@@ -10,6 +10,69 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==July 23rd, 2016
+===mbed LPC1768 and Arlo
+I used free moments over the last couple of weeks to use the included
+[[https://www.parallax.com/product/32912 | Parallax Propeller Activity Board WX]] to finish running through the
+[[https://www.parallax.com/product/arlo-robotic-platform-system | Arlo robot platform]] experiments documented on
+[[http://learn.parallax.com/tutorials/robot/arlo/arlo-activity-board-brain | this Parallax page]]. Now that the Arlo
+Robotic Platform build is complete and verified, it is time for me to switch out the Propeller microcontroller board\\
+{{https://github.com/adamgreen/Ferdinand16/blob/master/photos/20160720-01.jpg}}\\
+and replace it with the mbed LPC1768 microcontroller board that I plan to use for this Robo-Magellan robot.\\
+{{https://github.com/adamgreen/Ferdinand16/blob/master/photos/20160720-02.jpg}}
+
+I was able to use the LPC1768 on the breadboard to start the development of the initial
+[[https://github.com/adamgreen/Ferdinand16/tree/master/libs/MotorController | MotorController driver]] and put the
+ESP8266 to use for WiFi based remote debugging and programming. The
+[[https://github.com/adamgreen/Ferdinand16/tree/master/firmware/drive | drive sample]] was written to validate this
+MotorController driver. It commands the wheels to drive ahead at a fixed rate for 2 seconds and verifies that the wheel
+encoders accumulate counts as expected.
+
+===Electronics Consolidation
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160722-01.jpg}}\\
+As can be seen in the above photo, I previously had the inertial sensors and a LPC1768 microcontroller soldered inside
+of a prototyping box and another LPC1768 on a breadboard with ESP8266 WiFi and DHB-10 Dual Motor Controller connections.
+This left me at a point where I needed to consolidate the electronics. I soldered the ESP8266 module, motor controller
+connections, and power supply connections into the prototyping box along with the inertial sensors. Once that was
+completed, a single LPC1768 could be responsible for everything: IMU, dead reckoning, motor control, visual traffic cone
+detection, etc. The following photo shows the current prototype after consolidation:\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160722-02.jpg}}
+
+**Notes:**
+* I added a 3-pin header just below the [[https://www.sparkfun.com/products/10724 | Sparkfun 9DoF Sensor Stick]]. There
+  is a blue jumper that can be used to connect the middle pin to either of its neighbors. This allows the selection of
+  the voltage source for the 9DoF sensor:
+** Connecting the middle pin to the pin closest to the 9DoF sensor will power the device from the USB power supply. This
+   is useful when connecting the board directly to the PC for orientation sensor experimentation alone.
+** Connecting the middle pin to the pin farthest away from the 9DoF sensor will power the device from the robot's 5V
+   supply.
+* My initial testing doesn't show the magnetometer detecting any varying magnetic interference from the ESP8266 WiFi
+  device. I mounted it as far away from the 9DoF sensor stick as possible to reduce the chances of this being a problem.
+  I was also careful not to route any power or signals lines underneath the 9DoF Sensor Stick.
+* I added a 3-pin connector for the serial connection to the DHB-10 Dual Motor Controller. The pin closest to the DC
+  Barrel Power Jack is **mbed Tx -> DHB-10 Ch1-White-Rx** and the middle pin is **DHB-10 Ch2-White-Tx -> mbed Rx**. The
+  third pin is ground but I left it unconnected since the mbed and DHB-10 already share a ground through the Power
+  Distribution Board.
+
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160723-01.png}}\\
+[[https://github.com/adamgreen/Ferdinand16/blob/master/eagle/Ferdinand16.pdf | Click to view full size PDF of the schematic]]
+
+===ESP-LINK Firmware Downgrade
+I was originally running
+[[https://github.com/jeelabs/esp-link/releases/tag/v2.1.7 | esp-link v2.1.7 - 2015-12-13 08:49:46 - cb75396]] of the
+firmware on the ESP8266 board and noticed two issues when running it that I didn't see with esp-link when using it with
+my [[https://github.com/adamgreen/bb-8#readme | BB-8 Ball Bot]]:
+* **mriprog** only achieves a rate of 10MB/sec on this robot but I was often getting >20MB/sec on the BB-8 robot.
+* **GDB** would often experience timeout errors when debugging this robot. I never saw this problem on the BB-8 robot.
+
+The BB-8 robot was running an older version of the firmware,
+[[https://github.com/jeelabs/esp-link/releases/tag/v1.0.4 | esp-link v1.0.4 - 2015-09-15 21:03:54 - 2c29e29]]. I
+downgraded to this version of the firmware and it solved the issues. I found that lowering the data rate from 430800 to
+115200 made the debug output to GDB even more reliable. It still experiences glitches but it no longer errors out like
+it did previously.
+
+
+
 ==July 18th, 2016
 ===IMU Updates
 There were a few more changes that needed to be made to the IMU code before it would be ready for my dead reckoning
