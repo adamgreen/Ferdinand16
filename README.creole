@@ -5,8 +5,56 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 ===Points of Interest
+[[http://www.robothon.org/robothon/robo-magellan.php | SRS Robo-Magellan rules]]\\
 [[https://github.com/adamgreen/Ferdinand14#readme | Notes from our 2014 attempt]]\\
+[[https://github.com/adamgreen/Ferdinand16#robo-magellan-2015 | Watching Robo-Magellan 2015 from side lines]]\\
+[[https://github.com/adamgreen/Ferdinand16#what-i-learned-from-robo-magellan-2015 | What I learned from watching Robo-Magellan 2015]]\\
 [[https://github.com/adamgreen/Ferdinand16#clone-this-repo-and-its-submodules | How to Clone GitHub Repository]]\\
+
+
+
+==July 25th, 2016
+===DHB-10 Serial Converter Board
+I decided to design a PCB board to be mounted on the 4x3 I/O headers of the
+[[https://www.parallax.com/product/28231 | Parallax DHB-10 Dual Motor Controller]] so that I could utilize one standard
+3-wire servo cable for the full-duplex serial connection between the DHB-10 and the LPC1768. The Parallax Propeller
+board does use 3-wire servo cables for this serial connection but it needs to use two of them to support full-duplex
+communications. This converter boards allows it to be done with a single cable. The board is laid out in such a way that
+the user can connect the 3-wire servo cable to any of the four edges, whichever results in the best routing.\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160723-02.png}}\\
+**eagle/DHB-10_Serial_Converter.brd**
+
+|= mbed Signal |= Servo Wire Colour |= DHB-10 Pin |
+| UART Tx      | White              | Ch1 - Rx |
+| UART Rx      | Red                | Ch2 - Tx |
+| Unconnected  | Black              | Unconnected |
+
+I have placed an order with [[https://oshpark.com | OSH Park]] for this board and it should arrive in a few weeks. I
+will continue to use jumper wires until it arrives.
+
+===Status Report
+My completed work items from last week were:
+* Interfaced the LPC1768 microcontroller to the
+  [[https://www.parallax.com/product/28231 | Parallax DHB-10 Dual Motor Controller]]. I initially used the LPC1768
+  and ESP8266 remote debugging/programming prototype that I already had setup on a breadboard for the development and
+  testing of the [[https://github.com/adamgreen/Ferdinand16/tree/master/libs/MotorController | MotorController driver]].
+* Moved the ESP8266 WiFi module and serial based motor controller connection into the project box which already
+  housed the IMU hardware. A photo of this consolidation can be
+  [[https://github.com/adamgreen/Ferdinand16/blob/master/photos/20160722-02.jpg | seen here]].
+* Fired up the [[https://cadsoft.io | Eagle PCB Design Software]] to:
+** Create a schematic to document the electronics currently found in the project box: mbed LPC1768, Sparkfun 9DoF Sensor
+   Stick, Adafruit Feather HUZZAH with ESP8266, 5V power connections, etc. That schematic can be
+   [[https://github.com/adamgreen/Ferdinand16/blob/master/eagle/Ferdinand16.pdf | seen here]].
+** Create a layout for a PCB that allows a single 3-wire servo wire to connect to two channels on the Parallax DHB-10
+   Dual Motor Controller for full-duplex serial communications whereas it currently requires two such servo wires. Three
+   of these boards have been ordered from OSH Park. The layout of this PCB can be
+   [[https://github.com/adamgreen/Ferdinand16/blob/master/photos/20160723-02.png | seen here]].
+
+My work items for the week ahead are:
+* Create a temporary but robust mount for the project box on the Arlo Robotic Platform. After some initial testing is
+  completed, it probably makes sense to use aluminum or plastic hardware to more permanently attach it.
+* Re-calibrate the magnetometer now that the project box is mounted on Arlo.
+* Start developing and testing code for dead reckoning experiments.
 
 
 
