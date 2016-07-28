@@ -6,6 +6,7 @@ NO_FLOAT_PRINTF := 0
 GCC4MBED_TYPE   := Release
 MBED_LIBS       := dsp
 USER_LIBS       := ../../libs/DmaSerial \
+                   ../../libs/GPDMA \
                    ../../libs/Sparkfun9DoFSensorStick \
                    ../../libs/ConfigFile \
                    ../../libs/FlashFileSystem

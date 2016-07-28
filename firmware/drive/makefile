@@ -3,7 +3,9 @@ DEVICES         := LPC1768
 GCC4MBED_DIR    := ../../gcc4mbed
 NO_FLOAT_SCANF  := 1
 NO_FLOAT_PRINTF := 1
-USER_LIBS       := ../../libs/MotorController ../../libs/DmaSerial
+USER_LIBS       := ../../libs/MotorController \
+                   ../../libs/DmaSerial \
+                   ../../libs/GPDMA
 
 # Allow firmware to be debugged wirelessly with MRI via esp-link.
 GCC4MBED_TYPE     := Checked

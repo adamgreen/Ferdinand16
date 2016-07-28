@@ -12,7 +12,7 @@
 */
 #include <assert.h>
 #include <DmaSerial.h>
-#include "GPDMA.h"
+#include <GPDMA.h>
 
 DmaSerial::DmaSerial(PinName tx, PinName rx, const char* pName /* = NULL */) : Serial(tx, rx, pName)
 {
