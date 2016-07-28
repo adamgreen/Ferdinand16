@@ -54,7 +54,7 @@ int ConfigFile::open(const char* pFilename)
     if (readResult != (size_t)fileSize)
         goto Exit;
 
-    // Over-allocatec by one so that a NULL terminator could be inserted.
+    // Over-allocated by one so that a NULL terminator could be inserted.
     *m_pEnd = '\0';
 
     result = 0;
