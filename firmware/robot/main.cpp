@@ -19,8 +19,47 @@
 #include <DmaSerial.h>
 #include <FlashFileSystem.h>
 #include <MotorController.h>
+#include <PID.h>
 #include <Sparkfun9DoFSensorStick.h>
 #include "files.h"
+
+// Time to allow the Kalman filter to stabilize before putting it to use (in seconds).
+#define KALMAN_STABILIZE_TIME 10
+
+// The frequency (in Hz) at which the orientation sensor readings and Kalman filter are run.
+#define KALMAN_FREQUENCY 100
+
+// The period (in seconds) at which the orientation sensor readings and Kalman filter are run.
+#define KALMAN_PERIOD (1.0f / (float)KALMAN_FREQUENCY)
+
+// The frequency (in Hz) at which the motor controller is updated. It is 1/2 the rate of the Kalman filter as the code
+// is currently written since it only updates the motor controller on every other Kalman filter iteration.
+#define MOTOR_FREQUNCY (KALMAN_FREQUENCY / 2)
+
+// Convert the motor frequency into period (in seconds).
+#define MOTOR_PERIOD (1.0f / (float)MOTOR_FREQUNCY)
+
+// The maximum speed to be issued to the motor controller.
+#define MAX_MOTOR_SPEED 100
+
+// The base speed to use for testing run mode.
+#define TEST_SPEED 50
+
+
+// *** PID System Model Calibration uses these parameters. ***
+// Time to allow the Kalman filter to stabilize before running the PID calibration routine (in milliseconds).
+#define CALIBRATE_STABILIZE_TIME (KALMAN_STABILIZE_TIME * 1000)
+
+// During calibration, oscillate between two limits (clockwise and counterclockwise) which are this far from original
+// heading at the start of the test. This angle is in degrees.
+#define CALIBRATE_ANGLE 45
+
+// Motor speed to use during oscillations. This is in encoder ticks per second.
+#define CALIBRATE_SPEED 100
+
+// Number of rotation oscillations to perform during test.
+#define CALIBRATE_OSCILLATION_ITERATIONS 10
+
 
 
 // The robot can be running in one of these modes.
@@ -36,12 +75,25 @@ enum RunMode
     RUN_MODE_CALIBRATE
 };
 
-static RunMode          g_runMode = RUN_MODE_CALIBRATE;
+static RunMode          g_runMode = RUN_MODE_RESET;
 static bool             g_haveGlobalConstructorsRun = false;
 static MotorController  g_motorController(p28, p27);
 static DebugSerial<256> g_debugSerial;
 static int              g_debug = 0;
-static Timer            g_motorUpdateTimer;
+
+/* The parameters for this PI (no D term) implementation are based on these measurement / calculations.
+        slope1 = 1.507058
+        slope2 = -1.549744
+        CO1 = 100
+        CO2 = -100
+        Kp* = 0.015284
+        Өp = 0.370527
+        Tc = 1.111580
+        Kc = 77.254082
+        Ti = 2.593686
+*/
+static PID              g_headingPID(77.254082f, 2.593686f, 0.0f, 0.0f, -MAX_MOTOR_SPEED, MAX_MOTOR_SPEED, MOTOR_PERIOD);
+
 
 // Function prototypes.
 static SensorCalibration readConfigurationFile();
@@ -49,6 +101,7 @@ static void              runMode(Sparkfun9DoFSensorStick* pSensorStick);
 static void              readOrientationAndHeadingAngle(Sparkfun9DoFSensorStick* pSensorStick,
                                                         Quaternion* pOrientation,
                                                         float* pHeadingAngle);
+static float             radiansToDegrees(float radians);
 static void              debugMode(Sparkfun9DoFSensorStick* pSensorStick);
 static void              calibrateMode(Sparkfun9DoFSensorStick* pSensorStick);
 static void              stopMotors();
@@ -67,7 +120,6 @@ int main()
     if (sensorStick.didInitFail())
         error("Encountered I2C I/O error during Sparkfun 9DoF Sensor Stick init.\n");
 
-    g_motorUpdateTimer.start();
     for (;;)
     {
         if (g_debug)
@@ -77,7 +129,6 @@ int main()
         {
         case RUN_MODE_RESET:
             sensorStick.reset();
-            g_motorUpdateTimer.reset();
             g_runMode = RUN_MODE_RUNNING;
             break;
         case RUN_MODE_RUNNING:
@@ -139,19 +190,56 @@ static SensorCalibration readConfigurationFile()
 
 static void runMode(Sparkfun9DoFSensorStick* pSensorStick)
 {
-    // Update motors at 50Hz (20 msec period).
-    if (g_motorUpdateTimer.read_ms() >= 20)
+    static bool     starting = true;
+    static uint32_t iteration = 0;
+    static float    cpuTime = 0.0f;
+    static Timer    timer;
+    float           desiredSpeed = (float)TEST_SPEED;
+    float           desiredHeading = 0.0f;
+    Quaternion      orientation;
+    float           headingAngle;
+    char            buffer[128];
+
+    // Read latest heading from Kalman filtered orientation sensor.
+    readOrientationAndHeadingAngle(pSensorStick, &orientation, &headingAngle);
+    iteration++;
+
+    // Allow the Kalman filter to stabilize for awhile before using its output as the heading to maintain via PID.
+    if (starting)
     {
-        g_motorUpdateTimer.reset();
-        g_motorController.setWheelSpeeds(100, 100);
+        if (iteration >= KALMAN_STABILIZE_TIME * KALMAN_FREQUENCY)
+        {
+            desiredHeading = headingAngle;
+            g_headingPID.enableAutomaticMode();
+            g_headingPID.updateSetPoint(desiredHeading);
+            timer.start();
+            starting = false;
+        }
+        snprintf(buffer, sizeof(buffer), "%f\n", radiansToDegrees(headingAngle));
+        g_debugSerial.outputStringToGdb(buffer);
+        return;
     }
 
-    Quaternion orientation;
-    float headingAngle;
-    readOrientationAndHeadingAngle(pSensorStick, &orientation, &headingAngle);
+    // Update motors at 1/2 the Kalman filter update (= 100Hz/2 = 50Hz).
+    if (iteration & 1)
+    {
+        // Capture CPU time on this iteration since it includes CPU time used by code below that executed on the
+        // previous iteration. This is the more conservative measurement of the CPU utilization.
+        cpuTime = 100.0f - pSensorStick->getIdleTimePercent();
+        return;
+    }
 
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%f,%.1f\n", headingAngle * 180.0f / M_PI, pSensorStick->getIdleTimePercent());
+    // Use PID computation to update motor controllers.
+    float speedDelta = g_headingPID.compute(headingAngle);
+    g_motorController.setWheelSpeeds(desiredSpeed + speedDelta, desiredSpeed - speedDelta);
+
+    // Output-> currentTime,currentHeading,desiredHeading,speedDelta,cpuTime
+    snprintf(buffer, sizeof(buffer), "%lu,%.2f,%.2f,%.1f,%.1f\n",
+             (uint32_t)timer.read_ms(),
+             radiansToDegrees(headingAngle),
+             radiansToDegrees(g_headingPID.getSetPoint()),
+             speedDelta,
+             cpuTime);
     g_debugSerial.outputStringToGdb(buffer);
 }
 
@@ -167,6 +255,11 @@ static void readOrientationAndHeadingAngle(Sparkfun9DoFSensorStick* pSensorStick
     *pHeadingAngle =  pSensorStick->getHeading(pOrientation);
 }
 
+static float radiansToDegrees(float radians)
+{
+    return radians * 180.0f / M_PI;
+}
+
 static void debugMode(Sparkfun9DoFSensorStick* pSensorStick)
 {
     stopMotors();
@@ -178,16 +271,6 @@ static void debugMode(Sparkfun9DoFSensorStick* pSensorStick)
 
     g_runMode = RUN_MODE_RESET;
 }
-
-// Time to allow the Kalman filter to stabilize before running the PID calibration routine, in milliseconds.
-#define CALIBRATE_STABILIZE_TIME 15000
-// During calibration, oscillate between two limits (clockwise and counterclockwise) which are this far from original
-// heading at the start of the test. This angle is in degrees.
-#define CALIBRATE_ANGLE 45
-// Motor speed to use during oscillations. This is in encoder ticks per second.
-#define CALIBRATE_SPEED 100
-// Number of rotation oscillations to perform during test.
-#define CALIBRATE_OSCILLATION_ITERATIONS 10
 
 static void calibrateMode(Sparkfun9DoFSensorStick* pSensorStick)
 {
@@ -204,7 +287,7 @@ static void calibrateMode(Sparkfun9DoFSensorStick* pSensorStick)
     while (timer.read_ms() < CALIBRATE_STABILIZE_TIME)
     {
         readOrientationAndHeadingAngle(pSensorStick, &orientation, &headingAngle);
-        snprintf(buffer, sizeof(buffer), "%f\n", headingAngle * 180.0f / M_PI);
+        snprintf(buffer, sizeof(buffer), "%f\n", radiansToDegrees(headingAngle));
         g_debugSerial.outputStringToGdb(buffer);
     }
 
@@ -218,8 +301,8 @@ static void calibrateMode(Sparkfun9DoFSensorStick* pSensorStick)
     } direction = CLOCKWISE;
 
     // Run oscillating rotations.
-    snprintf(buffer, sizeof(buffer), "Starting oscillations between %f and %f...\n", minAngle * 180.0f / M_PI,
-                                                                                     maxAngle * 180.0f / M_PI);
+    snprintf(buffer, sizeof(buffer), "Starting oscillations between %f and %f...\n", radiansToDegrees(minAngle),
+                                                                                     radiansToDegrees(maxAngle));
     g_debugSerial.outputStringToGdb(buffer);
     uint32_t oscillationCount = 0;
     uint32_t sampleCount = 0;
@@ -271,7 +354,7 @@ static void calibrateMode(Sparkfun9DoFSensorStick* pSensorStick)
         int32_t rightSpeed = -speedDelta;
         g_motorController.setWheelSpeeds(leftSpeed, rightSpeed);
 
-        snprintf(buffer, sizeof(buffer), "%u,%f,%ld\n", timer.read_ms(), headingAngle * 180.0f / M_PI, speedDelta);
+        snprintf(buffer, sizeof(buffer), "%u,%f,%ld\n", timer.read_ms(), radiansToDegrees(headingAngle), speedDelta);
         g_debugSerial.outputStringToGdb(buffer);
     }
     g_debugSerial.outputStringToGdb("PID Calibration completed.\n");
