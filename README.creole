@@ -13,6 +13,69 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==August 14th, 2016
+===Project on Pause!
+Something more important has popped up and I won't have time to complete this Robo-Magellan project in time for the
+[[[[http://www.robothon.org/robothon/index.php | SRS Robothon event on October 1, 2016]]. I do plan to continue this
+project for 2017.
+
+====Where to Pickup for Robothon 2017
+* Get the Arlo Robotic Platform working better out on the grass. The Arlo platform has two caster wheels: one in the
+  front and another in the back. Neither of these casters are compliant to changes in the terrain so it is very easy for
+  the robot to high center. I will need to correct this before I can perform more real world outdoor testing of my code.
+  There is also very little clearance between the battery pack and the ground that will need to be corrected as well.
+* Continue developing and testing the dead reckoning code.
+* Develop and test the code to detect the orange traffic cones.
+* Develop and test the obstacle advoidance code using the ultrasonic sensors on the Arlo.
+
+
+
+==July 31st, 2016
+While the month of July got off to a slow start, the progress during the last 2 weeks of the month more than made up for
+it.
+
+===Status Report
+====My completed work items from last week were:
+* I used tape to attach the project box (with LPC1768, Sparkfun 9DoF Sensor Stick, ESP8266 WiFi board, etc) to the Arlo
+  Robotic Platform. I placed the project box in the middle of a piece of foam board (also just taped down) which had a
+  hole that exactly fit the box's profile. This guarantees that I can remount the project box in the same orientation if
+  I need to temporarily remove it in the near future. After some initial testing is completed, it probably makes sense
+  to use aluminum or plastic hardware to more permanently attach it.\\
+  {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160728-01.jpg}}
+* I re-calibrated the magnetometer after adding the ESP8266 WiFi board and mounting on the Arlo Robot Platform. I used
+  the steps I [[https://github.com/adamgreen/Ferdinand14#magnetometer-calibration | previously documented here]] to
+  measure the new minimum/maximum magnetometer limits and then updated them in
+  [[https://github.com/adamgreen/Ferdinand16/commit/9bc8e74cfef36512c0ed7127e45e807f0620d58b#diff-1f39fe2c21e1cd7840fcc7ab6eb5f025L2 | the config.ini file.]]
+  This didn't take long but required some energy as I had to rotate the 25 pound (11.3 kg) robot about each of its axis
+  while running the [[https://github.com/adamgreen/Ferdinand14/tree/master/calibration | calibration utility]].
+* I wrote the [[https://github.com/adamgreen/Ferdinand16/blob/master/libs/DebugSerial/DebugSerial.h | DebugSerial class]]
+  to extend the capabilities of the remote debugging functionality on this bot. The remote debugging solution provided
+  by [[https://github.com/adamgreen/mri#readme | my MRI debug monitor]] already had the ability to capture printf()
+  output and send it to my MacBook Air to be viewed in the GDB console. The big issue with this existing approach is
+  that it halts the LPC1768 CPU each time it redirects printf() output to GDB. This has a major impact on the
+  performance of the robot firmware. The new DebugSerial class features a new DebugSerial::outputStringToGdb() method
+  which can be used to asynchronously send output to GDB over the same serial connection using DMA to have minimal
+  impact on performance.
+* I [[https://github.com/adamgreen/Ferdinand16/commit/0370758c846bde5140c8017d85a9d303b4aa1f5e | added a PID control algorithm]]
+  to maintain a desired heading. I am currently just using the Proportional and Integral terms of the PID algorithm and
+  skipping on the Derivative term for now. This algorithm was initially used to have the robot drive slowly forward
+  while maintaining the same heading as when it started execution. So far I am pretty happy with the results of this
+  code (PID and Kalman filtered orientation) and the
+  [[https://www.parallax.com/product/arlo-robotic-platform-system | Arlo Robot Platform]]. My PID implementation is
+  heavily based on the knowledge I obtained from reading the
+  [[http://controlguru.com/recognizing-integrating-non-self-regulating-process-behavior/ | Control Guru documentation on Integrating Processes]].
+  I originally implemented this PID code for [[https://github.com/adamgreen/bb-8#readme | my BB-8 project]] and I only
+  needed to make one modification for use in this project. The required modification was to
+  [[https://github.com/adamgreen/Ferdinand16/blob/0370758c846bde5140c8017d85a9d303b4aa1f5e/firmware/robot/PID.h#L58 | constrain the angle error to be between -π and π]].\\
+  {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160730-02.gif}}
+* I purchased a [[https://www.amazon.com/gp/product/B00TQEX8BO | TP-LINK TL-WR802N Wireless N300 Travel Router]] to
+  enable my laptop and ESP8266 to have an access point for connection when running outside. I can power it from my
+  laptop (via USB) or the power supply on the robot itself. It was easy to setup and I have had no issues using it with
+  this bot so far.\\
+  {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160730-01.jpg}}
+
+
+
 ==July 25th, 2016
 ===DHB-10 Serial Converter Board
 I decided to design a PCB board to be mounted on the 4x3 I/O headers of the
@@ -33,7 +96,7 @@ I have placed an order with [[https://oshpark.com | OSH Park]] for this board an
 will continue to use jumper wires until it arrives.
 
 ===Status Report
-My completed work items from last week were:
+====My completed work items from last week were:
 * Interfaced the LPC1768 microcontroller to the
   [[https://www.parallax.com/product/28231 | Parallax DHB-10 Dual Motor Controller]]. I initially used the LPC1768
   and ESP8266 remote debugging/programming prototype that I already had setup on a breadboard for the development and
@@ -50,7 +113,7 @@ My completed work items from last week were:
    of these boards have been ordered from OSH Park. The layout of this PCB can be
    [[https://github.com/adamgreen/Ferdinand16/blob/master/photos/20160723-02.png | seen here]].
 
-My work items for the week ahead are:
+====My work items for the week ahead are:
 * Create a temporary but robust mount for the project box on the Arlo Robotic Platform. After some initial testing is
   completed, it probably makes sense to use aluminum or plastic hardware to more permanently attach it.
 * Re-calibrate the magnetometer now that the project box is mounted on Arlo.

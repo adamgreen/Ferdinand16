@@ -23,6 +23,7 @@
 #include <Sparkfun9DoFSensorStick.h>
 #include "files.h"
 
+
 // Time to allow the Kalman filter to stabilize before putting it to use (in seconds).
 #define KALMAN_STABILIZE_TIME 10
 
@@ -61,7 +62,6 @@
 #define CALIBRATE_OSCILLATION_ITERATIONS 10
 
 
-
 // The robot can be running in one of these modes.
 enum RunMode
 {
@@ -75,13 +75,14 @@ enum RunMode
     RUN_MODE_CALIBRATE
 };
 
+
 static RunMode          g_runMode = RUN_MODE_RESET;
 static bool             g_haveGlobalConstructorsRun = false;
 static MotorController  g_motorController(p28, p27);
 static DebugSerial<256> g_debugSerial;
 static int              g_debug = 0;
 
-/* The parameters for this PI (no D term) implementation are based on these measurement / calculations.
+/* The parameters for this PI (no D term) implementation are based on these measurements / calculations.
         slope1 = 1.507058
         slope2 = -1.549744
         CO1 = 100
