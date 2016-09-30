@@ -1,7 +1,13 @@
-{{http://www.robothon.org/robothon/images/srslogo.gif}}
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/srslogo.gif}}
 Tracking of the work I am doing on a robot to compete in the next
 [[http://www.robothon.org/robothon/robo-magellan.php | Seattle Robotics Society's Robo-Magellan]] event at the
 [[http://www.robothon.org/robothon/index.php | Seattle Center on October 1, 2016]].
+
+
+
+===Latest Project News!
+[[https://github.com/adamgreen/Ferdinand16#project-on-pause | Project on pause for now]]\\
+
 
 
 ===Points of Interest
@@ -10,6 +16,20 @@ Tracking of the work I am doing on a robot to compete in the next
 [[https://github.com/adamgreen/Ferdinand16#robo-magellan-2015 | Watching Robo-Magellan 2015 from side lines]]\\
 [[https://github.com/adamgreen/Ferdinand16#what-i-learned-from-robo-magellan-2015 | What I learned from watching Robo-Magellan 2015]]\\
 [[https://github.com/adamgreen/Ferdinand16#clone-this-repo-and-its-submodules | How to Clone GitHub Repository]]\\
+
+
+
+==September 29th, 2016
+I received the [[https://github.com/adamgreen/Ferdinand16#dhb-10-serial-converter-board | DBH-10 Serial Converter PCBs]]
+from OSHPark since my last posting and I decided that I would atleast get them mounted on the bot while I had a chance
+even though I won't be doing much more with it this year. I soldered the 0.1" male and female headers to the board and
+got it mounted on my robot. The following photos give an overview of the process:\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160929-01.jpg}}\\
+**Serial Converter PCB after soldering on headers**\\\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160929-02.jpg}}\\
+**Serial Converter PCB mounted on DHB-10 motor controller in lower left**\\\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20160929-03.jpg}}\\
+**Main electronics now connected to DHB-10 via standard hobby servo cable**\\
 
 
 
