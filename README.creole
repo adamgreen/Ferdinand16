@@ -19,6 +19,36 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 
+==October 4th, 2016
+===Robo-Magellan 2016
+The 2016 Robo-Magellan competition was held at Seattle Center as part of Robothon last Saturday, October 1st.  It was
+raining at the beginning of the competition but it stopped by the time the first robot ran the course and the sun was
+out by the end of the competition.
+
+There were 4 competitors this year and what follows is the order that I believe they finished. None of the bots managed
+to tag the final goal cone yet again this year.
+
+===1st Place
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20161004-02.gif}}\\
+The above animation shows Will Smith's bot tagging the bonus cone during its first run.
+
+===2nd Place
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20161004-04.gif}}\\
+The above animation shows Dave Mier's bot as it races just behind the goal cone. The animation below shows the same
+bot **tagging** the bonus cone on a subsequent run.\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20161004-05.gif}}\\
+
+===3rd Place
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20161004-03.gif}}\\
+The above animation shows Albert Yen's bot as it is circles in front of the bonus cone but never quite manages to find
+and tag it.
+
+===4th Place
+Bob Cook also competed today with this fine robot:\\
+{{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/20161004-01.jpg}}\\
+
+
+
 ==September 29th, 2016
 I received the [[https://github.com/adamgreen/Ferdinand16#dhb-10-serial-converter-board | DBH-10 Serial Converter PCBs]]
 from OSHPark since my last posting and I decided that I would atleast get them mounted on the bot while I had a chance
