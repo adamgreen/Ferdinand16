@@ -15,6 +15,7 @@ Tracking of the work I am doing on a robot to compete in the next
 [[https://github.com/adamgreen/Ferdinand14#readme | Notes from our 2014 attempt]]\\
 [[https://github.com/adamgreen/Ferdinand16#robo-magellan-2015 | Watching Robo-Magellan 2015 from side lines]]\\
 [[https://github.com/adamgreen/Ferdinand16#what-i-learned-from-robo-magellan-2015 | What I learned from watching Robo-Magellan 2015]]\\
+[[https://github.com/adamgreen/Ferdinand16#robo-magellan-2016 | Watching Robo-Magellan 2016 from side lines]]\\
 [[https://github.com/adamgreen/Ferdinand16#clone-this-repo-and-its-submodules | How to Clone GitHub Repository]]\\
 
 
