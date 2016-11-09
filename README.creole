@@ -1,7 +1,7 @@
 {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/srslogo.gif}}
-Tracking of the work I am doing on a robot to compete in the next
-[[http://www.robothon.org/robothon/robo-magellan.php | Seattle Robotics Society's Robo-Magellan]] event at the
-[[http://www.robothon.org/robothon/index.php | Seattle Center on October 1, 2016]].
+Tracking of the work I started to build a robot to compete in the
+[[https://robothon.org/rules-robo-magellan/ | Seattle Robotics Society's Robo-Magellan]] event at the
+[[https://robothon.org | Seattle Center on October 1, 2016]].
 
 
 
@@ -11,7 +11,7 @@ Tracking of the work I am doing on a robot to compete in the next
 
 
 ===Points of Interest
-[[http://www.robothon.org/robothon/robo-magellan.php | SRS Robo-Magellan rules]]\\
+[[https://robothon.org/rules-robo-magellan/ | SRS Robo-Magellan rules]]\\
 [[https://github.com/adamgreen/Ferdinand14#readme | Notes from our 2014 attempt]]\\
 [[https://github.com/adamgreen/Ferdinand16#robo-magellan-2015 | Watching Robo-Magellan 2015 from side lines]]\\
 [[https://github.com/adamgreen/Ferdinand16#what-i-learned-from-robo-magellan-2015 | What I learned from watching Robo-Magellan 2015]]\\
