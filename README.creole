@@ -1,7 +1,8 @@
 {{https://raw.githubusercontent.com/adamgreen/Ferdinand16/master/photos/srslogo.gif}}
 Tracking of the work I started to build a robot to compete in the
-[[https://robothon.org/rules-robo-magellan/ | Seattle Robotics Society's Robo-Magellan]] event at the
-[[https://robothon.org | Seattle Center on October 1, 2016]].
+[[https://robothon.org/rules-robo-magellan/ | Seattle Robotics Society's Robo-Magellan]] event at the Seattle Center on
+October 1, 2016 but now targetting the
+[[https://robothon.org | September 30th, 2017 running of the competition]] instead.
 
 
 
